@@ -1,0 +1,1941 @@
+{% extends "base.html" %}
+{% load rawdocs_extras %}
+{% load static %}
+{% block title %}Annotation {{ document.file.name|basename }} – RawDocs{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'rawdocs/css/rlhf_styles.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+<!-- ADD THIS TO THE TOP OF YOUR annotate_document.html AFTER THE BOOTSTRAP CSS LINK -->
+
+<style>
+/* NUCLEAR OPTION: Override ALL modal conflicts */
+.context-menu {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    padding: 0;
+    min-width: 150px;
+}
+
+.context-menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-size: 14px;
+    color: #333;
+    transition: background-color 0.2s;
+}
+
+.context-menu-item:hover {
+    background-color: #f8f9fa;
+}
+
+.context-menu-item.danger {
+    color: #dc3545;
+}
+
+.context-menu-item.danger:hover {
+    background-color: #f8d7da;
+}
+
+/* Hide context menu initially */
+.context-menu.hidden {
+    display: none;
+}
+/* Force modal to appear above EVERYTHING */
+.modal {
+    z-index: 999999 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    display: none !important;
+}
+
+.modal.show {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Force backdrop to be clickable and properly positioned */
+.modal-backdrop {
+    z-index: 999998 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Force modal dialog to be above backdrop and clickable */
+.modal-dialog {
+    z-index: 1000000 !important;
+    position: relative !important;
+    margin: 1.75rem auto !important;
+    max-width: 500px !important;
+    width: 90% !important;
+    pointer-events: auto !important;
+}
+
+/* Force modal content styling */
+.modal-content {
+    background: white !important;
+    border: none !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8) !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 1000001 !important;
+}
+
+.modal-header {
+    background: #f8f9fa !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    padding: 1rem 1.5rem !important;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.modal-title {
+    color: #495057 !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+}
+
+.modal-body {
+    background: white !important;
+    padding: 1.5rem !important;
+    color: #495057 !important;
+}
+
+.modal-footer {
+    background: #f8f9fa !important;
+    border-top: 1px solid #dee2e6 !important;
+    padding: 1rem 1.5rem !important;
+    border-radius: 0 0 0.5rem 0.5rem !important;
+}
+
+/* Force all form elements to work properly */
+.modal input,
+.modal select,
+.modal textarea {
+    background: white !important;
+    border: 1px solid #ced4da !important;
+    color: #495057 !important;
+    padding: 0.375rem 0.75rem !important;
+    border-radius: 0.25rem !important;
+    width: 100% !important;
+    pointer-events: auto !important;
+    z-index: 1000002 !important;
+    position: relative !important;
+}
+
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    outline: 0 !important;
+}
+
+.modal .form-label {
+    color: #495057 !important;
+    font-weight: 500 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.modal .btn {
+    pointer-events: auto !important;
+    z-index: 1000002 !important;
+    position: relative !important;
+}
+
+.modal .btn-close {
+    background: transparent !important;
+    border: none !important;
+    color: #000 !important;
+    opacity: 0.5 !important;
+    pointer-events: auto !important;
+    z-index: 1000002 !important;
+    position: relative !important;
+}
+
+.modal .btn-close:hover {
+    opacity: 1 !important;
+}
+
+/* Remove ANY other z-index that might interfere */
+.annotation-header,
+.annotation-types-panel,
+.page-navigation,
+.text-content-card,
+.annotations-list,
+.learning-dashboard-widget {
+    z-index: auto !important;
+    position: relative !important;
+}
+
+/* Ensure the page content doesn't interfere */
+.app-container,
+.site-header,
+body {
+    z-index: auto !important;
+}
+
+/* Force click events to work */
+.modal * {
+    pointer-events: auto !important;
+}
+
+.modal-dialog * {
+    pointer-events: auto !important;
+}
+
+.modal-content * {
+    pointer-events: auto !important;
+}
+@keyframes highlight-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+    50% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0.3); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+}
+
+.annotation-text-clickable:hover {
+    background-color: #e7f3ff !important;
+    border-radius: 3px;
+    padding: 1px 3px;
+}
+</style>
+
+<!-- ALSO ADD THIS JAVASCRIPT AFTER YOUR EXISTING SCRIPTS -->
+<script>
+// NUCLEAR JAVASCRIPT FIX
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Force remove any conflicting event listeners
+    function showAddAnnotationTypeModalFixed() {
+        console.log('🚀 Opening modal...');
+        
+        // Clear form
+        document.getElementById('new-annotation-display-name').value = '';
+        document.getElementById('new-annotation-name').value = '';
+        
+        // Get modal element
+        const modalElement = document.getElementById('addAnnotationTypeModal');
+        
+        if (!modalElement) {
+            console.error('Modal element not found!');
+            return;
+        }
+        
+        // Destroy any existing modal instance
+        const existingModal = bootstrap.Modal.getInstance(modalElement);
+        if (existingModal) {
+            existingModal.dispose();
+        }
+        
+        // Create fresh modal instance
+        const modal = new bootstrap.Modal(modalElement, {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
+        
+        // Force show
+        modal.show();
+        
+        // Ensure it's clickable after showing
+        setTimeout(() => {
+            const dialog = modalElement.querySelector('.modal-dialog');
+            const content = modalElement.querySelector('.modal-content');
+            
+            if (dialog) {
+                dialog.style.pointerEvents = 'auto';
+                dialog.style.zIndex = '1000000';
+            }
+            
+            if (content) {
+                content.style.pointerEvents = 'auto';
+                content.style.zIndex = '1000001';
+            }
+            
+            // Force focus on first input
+            const firstInput = modalElement.querySelector('input[type="text"]');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }, 100);
+        
+        console.log('✅ Modal should be open and clickable now');
+    }
+    
+    // Replace the existing function
+    window.showAddAnnotationTypeModal = showAddAnnotationTypeModalFixed;
+    
+    // Also fix the create function
+    window.createAnnotationTypeFixed = function() {
+        console.log('🎯 Creating annotation type...');
+        
+        const displayName = document.getElementById('new-annotation-display-name').value.trim();
+        const name = document.getElementById('new-annotation-name').value.trim();
+
+        if (!displayName) {
+            alert('Please enter a display name');
+            return;
+        }
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch('/create-annotation-type/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                display_name: displayName,
+                name: name
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+
+                // Add new button
+                addNewAnnotationButtonToAnnotateur(data.annotation_type);
+
+                // Force close modal
+                const modalElement = document.getElementById('addAnnotationTypeModal');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                }
+                
+                // Clear form
+                document.getElementById('new-annotation-display-name').value = '';
+                document.getElementById('new-annotation-name').value = '';
+                
+                console.log('✅ Annotation type created successfully');
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error creating annotation type');
+        });
+    };
+    
+    // Replace the create function
+    window.createAnnotationType = window.createAnnotationTypeFixed;
+    
+    console.log('🔧 Modal fixes applied');
+});
+</script>
+
+<style>
+/* Pharma color variables */
+:root {
+  --pharma-primary: #0ea5e9;
+  --pharma-primary-dark: #0284c7;
+  --pharma-accent: #10b981;
+  --pharma-bg: #f8fafc;
+  --pharma-bg-card: rgba(255,255,255,0.95);
+  --pharma-glass: rgba(14,165,233,0.10);
+  --pharma-border: #cbd5e1;
+  --pharma-shadow: 0 8px 32px 0 rgba(14, 165, 233, 0.07);
+  --pharma-text: #1e293b;
+  --pharma-text-soft: #64748b;
+  --pharma-valid: #22c55e;
+  --pharma-warn: #f59e0b;
+  --pharma-error: #ef4444;
+  --pharma-info: #38bdf8;
+  --pharma-radius: 18px;
+  --pharma-radius-sm: 12px;
+  --pharma-font: 'Inter', sans-serif;
+  --pharma-transition: all 0.28s cubic-bezier(.4,0,.2,1);
+}
+
+/* Reset and base */
+body {
+  background: linear-gradient(135deg, var(--pharma-bg) 70%, #e0f2fe 100%);
+  color: var(--pharma-text);
+  font-family: var(--pharma-font);
+}
+
+.main-content {
+  max-width: 850px;
+  margin: auto;
+}
+
+/* Annotation header */
+.annotation-header {
+  background: var(--pharma-bg-card);
+  border-radius: var(--pharma-radius);
+  box-shadow: var(--pharma-shadow);
+  border: 1px solid var(--pharma-border);
+  padding: 1.5rem 2rem;
+  margin-bottom: 2.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  animation: fadeInUp 0.5s;
+}
+
+.header-info h2 {
+  color: var(--pharma-primary-dark);
+  font-size: 1.45rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.document-meta {
+  display: flex;
+  gap: 1.2rem;
+  font-size: 0.98rem;
+  margin-top: 0.2rem;
+}
+
+.meta-item {
+  color: var(--pharma-text-soft);
+  gap: 0.3rem;
+  display: flex;
+  align-items: center;
+}
+
+.header-actions .btn-outline {
+  background: var(--pharma-glass);
+  border: 1.5px solid var(--pharma-primary);
+  color: var(--pharma-primary-dark);
+  border-radius: var(--pharma-radius-sm);
+  font-size: 1rem;
+  padding: 0.6rem 1.3rem;
+  font-weight: 500;
+  transition: var(--pharma-transition);
+}
+.header-actions .btn-outline:hover {
+  background: var(--pharma-primary);
+  color: #fff;
+  border-color: var(--pharma-primary-dark);
+  transform: translateY(-2px) scale(1.04);
+}
+
+/* Annotation Types Panel */
+.annotation-types-panel {
+  background: linear-gradient(120deg, #f0fdfa 70%, #bae6fd 100%);
+  border: 1.5px solid var(--pharma-primary-light, #38bdf8);
+  border-radius: var(--pharma-radius);
+  margin-bottom: 2rem;
+  box-shadow: var(--pharma-shadow);
+  padding: 2rem;
+}
+
+.annotation-types-panel h3 {
+  font-size: 1.2rem;
+  color: var(--pharma-primary-dark);
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.instructions,
+.help-text {
+  color: var(--pharma-text-soft);
+  font-size: 0.97rem;
+  opacity: 0.88;
+  margin-bottom: 0.7rem;
+}
+
+.annotation-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 0.8rem;
+}
+
+.annotation-type-btn {
+  border-radius: 999px;
+  background: var(--pharma-bg-card);
+  border: 2px solid var(--pharma-primary);
+  color: var(--pharma-primary-dark);
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0.45rem 1.25rem;
+  box-shadow: 0 2px 10px rgba(14,165,233,0.05);
+  transition: var(--pharma-transition);
+  outline: none;
+}
+.annotation-type-btn:hover, .annotation-type-btn.active {
+  background: var(--pharma-primary);
+  color: #fff;
+  transform: translateY(-2px) scale(1.07);
+  border-color: var(--pharma-primary-dark);
+  box-shadow: 0 6px 18px rgba(14,165,233,0.14);
+}
+.annotation-type-btn-add {
+  background: linear-gradient(90deg, var(--pharma-accent), var(--pharma-primary));
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 999px;
+  font-size: 1rem;
+  padding: 0.45rem 1.35rem;
+  transition: var(--pharma-transition);
+  box-shadow: 0 2px 12px rgba(16,185,129,0.11);
+}
+.annotation-type-btn-add:hover {
+  background: linear-gradient(90deg, var(--pharma-primary), var(--pharma-accent));
+  transform: translateY(-1.5px) scale(1.06);
+}
+
+.current-mode {
+  background: var(--pharma-primary-dark);
+  color: #fff;
+  border-radius: 12px;
+  padding: 0.23rem 1rem;
+  font-size: 1.03rem;
+  margin-left: 0.7rem;
+  font-weight: 600;
+}
+
+/* Context Menu */
+.context-menu {
+  position: absolute;
+  background: var(--pharma-bg-card);
+  border: 1.5px solid var(--pharma-border);
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.13);
+  min-width: 170px;
+  z-index: 10010;
+  font-size: 1rem;
+  padding: 0.1rem;
+}
+.context-menu-item {
+  color: var(--pharma-text);
+  padding: 9px 14px;
+  background: none;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  transition: background .18s;
+}
+.context-menu-item:hover { background: #e0f2fe; }
+.context-menu-item.danger { color: var(--pharma-error); }
+.context-menu-item.danger:hover { background: #ffe4e6; }
+.context-menu.hidden { display: none; }
+
+/* Page Navigation */
+.page-navigation {
+  background: var(--pharma-bg-card);
+  border: 1px solid var(--pharma-border);
+  border-radius: var(--pharma-radius);
+  box-shadow: var(--pharma-shadow);
+  padding: 1.1rem 1.9rem;
+  margin-bottom: 2.1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-controls { display: flex; align-items: center; gap: 1.5rem; }
+.page-selector select {
+  padding: 0.48rem 1.1rem;
+  border-radius: 12px;
+  border: 1.5px solid var(--pharma-primary);
+  background: var(--pharma-glass);
+  color: var(--pharma-primary-dark);
+  font-weight: 600;
+  font-size: 1rem;
+  outline: none;
+  transition: border .18s;
+}
+.page-selector select:focus {
+  border-color: var(--pharma-accent);
+}
+
+.nav-btn {
+  background: var(--pharma-primary-dark);
+  color: #fff;
+  border-radius: 11px;
+  font-size: 1rem;
+  padding: 0.5rem 1.4rem;
+  font-weight: 600;
+  border: none;
+  transition: var(--pharma-transition);
+  box-shadow: 0 3px 10px rgba(14,165,233,0.11);
+  outline: none;
+}
+.nav-btn:hover {
+  background: var(--pharma-primary);
+  color: #fff;
+  transform: scale(1.04) translateY(-1px);
+}
+
+/* AI, Validate, Expert Buttons */
+.ai-controls { display: flex; align-items: center; gap: 1.1rem; }
+.btn-groq {
+  background: linear-gradient(90deg, var(--pharma-primary), var(--pharma-info));
+  color: #fff;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 0.65rem 1.4rem;
+  font-size: 1.04rem;
+  border: none;
+  box-shadow: 0 4px 18px rgba(56,189,248,0.08);
+  transition: var(--pharma-transition);
+}
+.btn-groq:hover { background: linear-gradient(90deg, var(--pharma-info), var(--pharma-primary-dark)); }
+
+.btn-validate {
+  background: var(--pharma-accent);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.65rem 1.4rem;
+  font-weight: 700;
+  font-size: 1.04rem;
+  box-shadow: 0 4px 12px rgba(16,185,129,0.09);
+  transition: var(--pharma-transition);
+}
+.btn-validate:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+.btn-validate:hover:not(:disabled) {
+  background: #059669;
+}
+
+.btn-expert {
+  background: linear-gradient(90deg, #6d28d9, #4c1d95 90%);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 0.65rem 1.4rem;
+  font-size: 1.04rem;
+  border: none;
+  box-shadow: 0 4px 12px rgba(109,40,217,0.13);
+  transition: var(--pharma-transition);
+}
+.btn-expert:hover { background: linear-gradient(90deg, #7c3aed, #a78bfa 80%); }
+
+.btn-success {
+  background: var(--pharma-accent);
+  color: #fff !important;
+  border-radius: 12px;
+  font-weight: 700;
+  padding: 0.65rem 1.4rem;
+}
+
+.ai-loading, .learning-progress {
+  color: var(--pharma-primary-dark);
+  font-weight: 500;
+  margin-left: 1rem;
+}
+
+/* Text Content (Zone principale d’annotation) */
+.text-content-card {
+  background: var(--pharma-bg-card);
+  border-radius: var(--pharma-radius);
+  box-shadow: var(--pharma-shadow);
+  border: 1.5px solid var(--pharma-primary-light, #38bdf8);
+  margin-bottom: 2.2rem;
+  padding: 2rem 2.1rem;
+  animation: fadeInUp 0.6s;
+}
+
+.text-content-card h3 {
+  color: var(--pharma-primary-dark);
+  font-size: 1.18rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.page-status {
+  padding: 0.25rem 1rem;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin-left: 1.1rem;
+  box-shadow: 0 2px 7px rgba(59,130,246,0.05);
+}
+.page-status.validated-human {
+  background: #d1fae5;
+  color: #047857;
+}
+.page-status.annotated {
+  background: #bae6fd;
+  color: var(--pharma-primary-dark);
+}
+.page-status.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Text content - Enhanced for PDF-like appearance */
+  .text-content {
+    background: #fafbfc;
+    border: 1px solid var(--pharma-border);
+    border-radius: 12px;
+    padding: 2rem;
+    line-height: 1.8;
+    font-size: 1.05rem;
+    color: var(--pharma-text);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    min-height: 400px;
+    cursor: text;
+    font-family: 'Inter', 'Georgia', 'Times New Roman', serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    hyphens: auto;
+    text-align: justify;
+    text-justify: inter-word;
+    letter-spacing: 0.01em;
+    word-spacing: 0.05em;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 2px solid rgba(59, 130, 246, 0.1);
+    transition: border-color 0.3s ease;
+  }
+
+  .text-content:hover {
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+
+  /* Add visual structure for better readability */
+  .text-content::before {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(to right, 
+      transparent, 
+      rgba(59, 130, 246, 0.2), 
+      transparent
+    );
+    margin-bottom: 1.5rem;
+  }
+
+  /* Enhanced paragraph spacing for PDF-like structure */
+  .text-content p {
+    margin-bottom: 1.2rem;
+    text-indent: 1.5rem;
+  }
+
+  .text-content p:first-child {
+    text-indent: 0;
+  }
+
+/* Annotations List (as cards) */
+.annotations-list {
+  background: var(--pharma-bg-card);
+  border-radius: var(--pharma-radius);
+  box-shadow: var(--pharma-shadow);
+  border: 1.5px solid var(--pharma-border);
+  padding: 1.8rem 2rem;
+  margin-bottom: 1.8rem;
+}
+.annotations-list h3 {
+  color: var(--pharma-primary-dark);
+  font-size: 1.13rem;
+  margin-bottom: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.annotation-item {
+  background: var(--pharma-glass);
+  border: 1.5px solid var(--pharma-border);
+  border-radius: var(--pharma-radius-sm);
+  margin-bottom: 1.1rem;
+  padding: 1rem 1.1rem;
+  transition: box-shadow .2s, border .2s;
+  box-shadow: 0 3px 15px rgba(14,165,233,0.09);
+  position: relative;
+}
+.annotation-item:hover {
+  border-color: var(--pharma-primary-dark);
+  box-shadow: 0 8px 28px rgba(14,165,233,0.14);
+}
+
+.annotation-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.6rem;
+}
+
+.annotation-type {
+  background: linear-gradient(90deg, var(--pharma-primary), var(--pharma-accent) 90%);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.97rem;
+  font-weight: 600;
+  padding: 0.24rem 1.05rem;
+}
+
+.annotation-confidence {
+  background: #bae6fd;
+  color: var(--pharma-primary-dark);
+  border-radius: 9px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.19rem 0.7rem;
+}
+
+.delete-annotation {
+  background: none;
+  border: none;
+  color: var(--pharma-error);
+  cursor: pointer;
+  padding: 0.3rem 0.7rem;
+  border-radius: 7px;
+  transition: background .13s;
+  margin-left: auto;
+}
+.delete-annotation:hover { background: #ffe4e6; }
+
+.annotation-text {
+  font-style: italic;
+  color: var(--pharma-primary-dark);
+  font-size: 1.02rem;
+  margin-bottom: 0.3rem;
+}
+
+.annotation-reasoning {
+  font-size: 0.94rem;
+  color: var(--pharma-accent);
+  display: flex;
+  align-items: center;
+  gap: 0.29rem;
+}
+
+/* RLHF/AI Generated */
+.ai-generated .annotation-type {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24 80%);
+  color: #fff;
+}
+.rlhf-indicator {
+  margin-top: 0.6rem;
+  color: var(--pharma-warn);
+  font-weight: 700;
+  font-size: 0.98rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Learning Dashboard Widget */
+.learning-dashboard-widget {
+  background: linear-gradient(90deg, var(--pharma-primary), var(--pharma-accent));
+  color: #fff;
+  padding: 1.25rem 2rem;
+  border-radius: var(--pharma-radius);
+  box-shadow: var(--pharma-shadow);
+  margin-bottom: 2rem;
+  border: none;
+  font-size: 1.08rem;
+}
+
+.learning-dashboard-widget h4 { color: #fff; font-weight: 700; margin-top: 0; }
+
+.metric {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0.35rem 0;
+}
+.metric-label { font-weight: 600; opacity: 0.87; }
+.metric-value { font-size: 1.07rem; font-weight: 700; }
+.performance-indicator { font-size: 1.18rem; margin-left: 0.5rem; }
+.learning-explanation { font-size: 0.88rem; opacity: 0.89; margin-top: 0.4rem; }
+
+/* Validation Success */
+.validation-success {
+  background: linear-gradient(90deg, #10b981, #38bdf8);
+  color: #fff;
+  padding: 1rem 1.6rem;
+  border-radius: 14px;
+  box-shadow: 0 2px 18px rgba(16,185,129,0.13);
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  transition: opacity 0.5s;
+}
+
+/* Modal (boost appearance) */
+.modal-content {
+  background: #fff;
+  border-radius: var(--pharma-radius-sm);
+  box-shadow: 0 8px 40px rgba(14,165,233,0.23);
+  border: none;
+}
+.modal-header, .modal-footer {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 12px 12px 0 0;
+}
+.modal-title { color: var(--pharma-primary-dark); font-weight: 600; }
+.btn-close { color: var(--pharma-text-soft); }
+.btn-primary {
+  background: var(--pharma-primary-dark);
+  color: #fff;
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  padding: 0.48rem 1.4rem;
+  transition: var(--pharma-transition);
+}
+.btn-primary:hover { background: var(--pharma-primary); color: #fff; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .main-content { max-width: 99vw; }
+  .annotation-header, .text-content-card, .annotations-list, .learning-dashboard-widget, .annotation-types-panel, .page-navigation {
+    padding: 1.1rem 0.8rem !important;
+  }
+}
+@media (max-width: 700px) {
+  .annotation-header, .annotation-types-panel, .page-navigation, .text-content-card, .annotations-list, .learning-dashboard-widget {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+  .header-actions { width: 100%; }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px);}
+  to   { opacity: 1; transform: translateY(0);}
+}
+</style>
+
+
+<!-- Annotation Header -->
+<section class="annotation-header">
+  <div class="header-info">
+    <h2><i class="fas fa-file-pdf"></i> {{ document.file.name|basename }}</h2>
+    <div class="document-meta">
+      <span class="meta-item">
+        <i class="fas fa-user"></i>
+        {{ document.owner.username }}
+      </span>
+      <span class="meta-item">
+        <i class="fas fa-file-alt"></i>
+        Page {{ current_page.page_number }} / {{ total_pages }}
+      </span>
+      <span class="meta-item">
+        <i class="fas fa-calendar"></i>
+        {{ document.validated_at|date:"d/m/Y" }}
+      </span>
+    </div>
+  </div>
+
+    <div class="header-actions">
+      <button class="btn-outline me-2" onclick="viewOriginalDocument({{ document.id }})">
+        <i class="fas fa-eye"></i> See Original Doc
+      </button>
+      <a href="{% url 'rawdocs:annotation_dashboard' %}" class="btn-outline">
+        <i class="fas fa-arrow-left"></i> Retour
+      </a>
+    </div>
+</section>
+
+<!-- Annotation Types Panel -->
+<section class="annotation-types-panel">
+  <h3>Sélectionnez un type d'entité</h3>
+  <p class="instructions">Cliquez sur un type, puis surlignez le texte correspondant</p>
+
+  <div class="annotation-types">
+    {% for ann_type in annotation_types %}
+    <button class="annotation-type-btn"
+            data-type="{{ ann_type.name }}"
+            data-color="{{ ann_type.color }}"
+            style="border-color: {{ ann_type.color }}; color: {{ ann_type.color }};">
+      {{ ann_type.display_name }}
+    </button>
+    {% endfor %}
+    <button class="annotation-type-btn-add" onclick="showAddAnnotationTypeModal()" type="button">
+      <i class="fas fa-plus"></i> Add Custom Type
+    </button>
+  </div>
+
+  <div class="annotation-mode">
+    <span class="mode-label">
+      <i class="fas fa-hand-pointer"></i>
+      Mode annotation activé:
+    </span>
+    <span id="current-mode" class="current-mode">Aucun type sélectionné</span>
+  </div>
+
+  <p class="help-text">Surlignez du texte pour créer une annotation automatiquement</p>
+
+  <div id="context-menu" class="context-menu hidden">
+    <button class="context-menu-item danger" onclick="deleteAnnotationTypeFromMenu()">
+        <i class="fas fa-trash"></i> Delete Annotation Type
+    </button>
+    <button class="context-menu-item" onclick="hideContextMenu()">
+        <i class="fas fa-times"></i> Cancel
+    </button>
+</div>
+</section>
+
+<!-- Page Navigation -->
+<section class="page-navigation">
+  <div class="page-controls">
+    {% if current_page.page_number > 1 %}
+      <a href="?page={{ current_page.page_number|add:'-1' }}" class="nav-btn">
+        <i class="fas fa-chevron-left"></i> Page Précédente
+      </a>
+    {% endif %}
+
+    <div class="page-selector">
+      <select id="page-select" onchange="goToPage(this.value)">
+        {% for page in pages %}
+        <option value="{{ page.page_number }}"
+                {% if page.page_number == current_page.page_number %}selected{% endif %}>
+          Page {{ page.page_number }}
+          {% if page.is_validated_by_human %}🎓{% elif page.is_annotated %}✅{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {% if current_page.page_number < total_pages %}
+      <a href="?page={{ current_page.page_number|add:'1' }}" class="nav-btn">
+        Page Suivante <i class="fas fa-chevron-right"></i>
+      </a>
+    {% endif %}
+  </div>
+
+  <div class="ai-controls">
+    <!-- Enhanced AI Button -->
+    <button id="groq-annotate-btn" class="btn-groq" onclick="annotateWithGroq()">
+      <i class="fas fa-rocket"></i> Annotate with AI 🧠
+    </button>
+
+    <!-- Validate Page Button -->
+    <button id="validate-page-btn" class="btn-validate" onclick="validatePage()"
+            {% if current_page.is_validated_by_human %}disabled{% endif %}>
+      <i class="fas fa-graduation-cap"></i>
+      {% if current_page.is_validated_by_human %}
+        Page Validée 🎓
+      {% else %}
+        Validate Page
+      {% endif %}
+    </button>
+
+    <!-- Expert Review Button -->
+    {% if not document.is_ready_for_expert %}
+      <button id="submit-document-expert-btn" class="btn-expert" onclick="submitDocumentForExpert()">
+        <i class="fas fa-user-graduate"></i>
+        Soumettre Document pour Expert
+      </button>
+    {% else %}
+      <button class="btn btn-success" disabled>
+        <i class="fas fa-check-circle"></i>
+        Document Soumis ✓
+      </button>
+    {% endif %}
+
+    <div id="ai-loading" class="ai-loading" style="display: none;">
+      <i class="fas fa-spinner fa-spin"></i> IA en cours...
+    </div>
+
+    <!-- Learning Progress Indicator -->
+    <div id="learning-progress" class="learning-progress" style="display: none;">
+      <i class="fas fa-brain"></i> IA en apprentissage...
+    </div>
+  </div>
+</section>
+
+<!-- Learning Dashboard Widget -->
+<section class="learning-dashboard-widget" id="learning-widget" style="display: none;"></section>
+
+<!-- Main Text Content -->
+<section class="text-content-card main-content">
+  <h3>
+    <i class="fas fa-file-text"></i>
+    Page {{ current_page.page_number }}
+    {% if current_page.is_validated_by_human %}
+      <span class="page-status validated-human">Validée par humain</span>
+    {% elif current_page.is_annotated %}
+      <span class="page-status annotated">Annotée</span>
+    {% else %}
+      <span class="page-status pending">En attente</span>
+    {% endif %}
+  </h3>
+
+  <div id="text-content" class="text-content" data-page-id="{{ current_page.id }}">
+    {{ current_page.cleaned_text }}
+  </div>
+</section>
+
+<!-- Annotations List -->
+<section class="annotations-list">
+  <h3><i class="fas fa-tags"></i> Annotations ({{ existing_annotations.count }})</h3>
+
+  <div id="annotations-container">
+    {% for annotation in existing_annotations %}
+    <div class="annotation-item" data-annotation-id="{{ annotation.id }}">
+      <div class="annotation-header">
+        <span class="annotation-type" style="background: {{ annotation.annotation_type.color }}">
+          {{ annotation.annotation_type.display_name }}
+        </span>
+        <span class="annotation-confidence">{{ annotation.confidence_score|floatformat:0 }}%</span>
+        <button class="delete-annotation" onclick="deleteAnnotation({{ annotation.id }})">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      <div class="annotation-text annotation-text-clickable" 
+        onclick="highlightTextInDocument('{{ annotation.selected_text|escapejs }}', {{ annotation.start_pos }}, {{ annotation.end_pos }})"
+        style="cursor: pointer; color: var(--pharma-primary-dark); text-decoration: underline;"
+        title="Cliquez pour voir dans le texte">"{{ annotation.selected_text }}"</div>
+      {% if annotation.ai_reasoning %}
+      <div class="annotation-reasoning">
+        <i class="fas fa-lightbulb"></i> {{ annotation.ai_reasoning }}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- FIXED Modal for adding new annotation types - Expert style -->
+<div class="modal fade" id="addAnnotationTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Annotation Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="new-annotation-display-name" class="form-label">Display Name</label>
+                    <input type="text" class="form-control" id="new-annotation-display-name"
+                           placeholder="e.g., Product, Dosage, Method">
+                </div>
+                <div class="mb-3">
+                    <label for="new-annotation-name" class="form-label">Technical Name (auto-generated)</label>
+                    <input type="text" class="form-control" id="new-annotation-name" readonly>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createAnnotationType()">
+                    Create Type
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'rawdocs/js/rlhf_annotation.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// MISSING VARIABLE - This is what's causing the error!
+let annotationTypeMap = {};
+
+// Initialize the type mapping when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // BUILD THE TYPE MAPPING FIRST - This was missing!
+    {% for ann_type in annotation_types %}
+    annotationTypeMap['{{ ann_type.name|escapejs }}'] = {{ ann_type.id }};
+    {% endfor %}
+    
+    console.log('📋 Annotation type mapping loaded:', annotationTypeMap);
+});
+
+// ALSO UPDATE your createAnnotationType function to add new types to the map
+function createAnnotationType() {
+    const displayName = document.getElementById('new-annotation-display-name').value.trim();
+    const name = document.getElementById('new-annotation-name').value.trim();
+
+    if (!displayName) {
+        alert('Please enter a display name');
+        return;
+    }
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('/create-annotation-type/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            display_name: displayName,
+            name: name
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+
+            // CRITICAL: Add the new type to our mapping!
+            annotationTypeMap[data.annotation_type.name] = data.annotation_type.id;
+            console.log('📋 Updated type mapping:', annotationTypeMap);
+
+            // Add new button to the interface immediately
+            addNewAnnotationButtonToAnnotateur(data.annotation_type);
+
+            // Close modal properly
+            const modalElement = document.getElementById('addAnnotationTypeModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Clear form
+            document.getElementById('new-annotation-display-name').value = '';
+            document.getElementById('new-annotation-name').value = '';
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating annotation type');
+    });
+}
+</script>
+
+<script>
+let selectedAnnotationType = null;
+let selectedColor = null;
+
+// FIXED: Initialize annotation type selection
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize annotation type buttons
+    document.querySelectorAll('.annotation-type-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons
+            document.querySelectorAll('.annotation-type-btn').forEach(b => b.classList.remove('active'));
+
+            // Add active class to clicked button
+            this.classList.add('active');
+
+            // Set selected type
+            selectedAnnotationType = this.dataset.type;
+            selectedColor = this.dataset.color;
+
+            // Update current mode display
+            document.getElementById('current-mode').textContent = this.textContent;
+            document.getElementById('current-mode').style.backgroundColor = selectedColor;
+        });
+    });
+
+    // Auto-generate technical name from display name
+    document.getElementById('new-annotation-display-name').addEventListener('input', function() {
+        const displayName = this.value;
+        const technicalName = displayName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        document.getElementById('new-annotation-name').value = technicalName;
+    });
+
+    // Mark validated pages
+    const validateBtn = document.getElementById('validate-page-btn');
+    if (validateBtn?.textContent?.includes('Validée')) {
+        showLearningWidget({});
+    }
+
+    // Add indicators to AI-generated annotations
+    document.querySelectorAll('.annotation-item').forEach(annotation => {
+        if (annotation.querySelector('.annotation-reasoning')?.textContent?.includes('RLHF')) {
+            annotation.classList.add('ai-generated');
+            const indicator = document.createElement('div');
+            indicator.className = 'rlhf-indicator';
+            indicator.innerHTML = '<i class="fas fa-brain"></i> IA Apprenante';
+            annotation.appendChild(indicator);
+        }
+    });
+});
+
+// Text selection for manual annotation
+document.getElementById('text-content').addEventListener('mouseup', function() {
+  if (!selectedAnnotationType) {
+    alert('Veuillez d\'abord sélectionner un type d\'annotation');
+    return;
+  }
+
+  const selection = window.getSelection();
+  if (selection.toString().trim().length === 0) return;
+
+  const range = selection.getRangeAt(0);
+  const selectedText = selection.toString().trim();
+
+  // Calculate positions
+  const textContent = this.textContent;
+  const startPos = getTextPosition(this, range.startContainer, range.startOffset);
+  const endPos = startPos + selectedText.length;
+
+  // Save annotation
+  saveManualAnnotation({
+    page_id: this.dataset.pageId,
+    type_id: getAnnotationTypeId(selectedAnnotationType),
+    start_pos: startPos,
+    end_pos: endPos,
+    selected_text: selectedText
+  });
+
+  // Clear selection
+  selection.removeAllRanges();
+});
+
+function getTextPosition(container, node, offset) {
+  let position = 0;
+  const walker = document.createTreeWalker(
+    container,
+    NodeFilter.SHOW_TEXT,
+    null,
+    false
+  );
+
+  let currentNode;
+  while (currentNode = walker.nextNode()) {
+    if (currentNode === node) {
+      return position + offset;
+    }
+    position += currentNode.textContent.length;
+  }
+  return position;
+}
+
+function getAnnotationTypeId(typeName) {
+    console.log('🔍 Looking for type:', typeName);
+    console.log('📋 Available types:', annotationTypeMap);
+    
+    const typeId = annotationTypeMap[typeName];
+    if (!typeId) {
+        console.error('❌ Type ID not found for:', typeName);
+        console.error('Available types:', Object.keys(annotationTypeMap));
+        return null;
+    }
+    
+    console.log('✅ Found type ID:', typeId, 'for type:', typeName);
+    return typeId;
+}
+
+function saveManualAnnotation(data) {
+  fetch('{% url "rawdocs:save_manual_annotation" %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload(); // Refresh to show new annotation
+    } else {
+      alert('Erreur: ' + data.error);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Erreur lors de la sauvegarde');
+  });
+}
+
+function deleteAnnotation(annotationId) {
+  if (!confirm('Supprimer cette annotation ?')) return;
+
+  fetch(`{% url "rawdocs:delete_annotation" 0 %}`.replace('0', annotationId), {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken')
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Erreur: ' + data.error);
+    }
+  });
+}
+
+function goToPage(pageNumber) {
+  window.location.href = `?page=${pageNumber}`;
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function submitDocumentForExpert() {
+    if (confirm('Soumettre ce document complet pour révision expert ?')) {
+        const documentId = {{ document.id }};
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(`/submit-for-expert/${documentId}/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        });
+    }
+}
+
+// FIXED: Modal handling like expert module
+function showAddAnnotationTypeModal() {
+    // Clear previous values
+    document.getElementById('new-annotation-display-name').value = '';
+    document.getElementById('new-annotation-name').value = '';
+    
+    // Show modal with proper Bootstrap 5 method
+    const modal = new bootstrap.Modal(document.getElementById('addAnnotationTypeModal'), {
+        backdrop: true,
+        keyboard: true,
+        focus: true
+    });
+    modal.show();
+}
+
+
+function addNewAnnotationButtonToAnnotateur(annotationType) {
+    // Check if button already exists to avoid duplicates
+    const existingButton = document.querySelector(`[data-type="${annotationType.name}"]`);
+    if (existingButton && !existingButton.classList.contains('annotation-type-btn-add')) {
+        console.log('Button already exists for type:', annotationType.name);
+        return;
+    }
+    annotationTypeMap[annotationType.name] = annotationType.id;
+    console.log('📋 Updated type mapping:', annotationTypeMap);
+    
+    // Create new button element
+    const newButton = document.createElement('button');
+    newButton.className = 'annotation-type-btn';
+    newButton.setAttribute('data-type', annotationType.name);
+    newButton.setAttribute('data-color', annotationType.color);
+    newButton.style.borderColor = annotationType.color;
+    newButton.style.color = annotationType.color;
+    newButton.textContent = annotationType.display_name;
+
+    // Add event listener for the new button
+    newButton.addEventListener('click', function() {
+        // Remove active class from all buttons
+        document.querySelectorAll('.annotation-type-btn').forEach(b => b.classList.remove('active'));
+
+        // Add active class to clicked button
+        this.classList.add('active');
+
+        // Set selected type
+        selectedAnnotationType = this.dataset.type;
+        selectedColor = this.dataset.color;
+
+        // Update current mode display
+        document.getElementById('current-mode').textContent = this.textContent;
+        document.getElementById('current-mode').style.backgroundColor = selectedColor;
+    });
+
+    // Add to annotation types container (before the "Add" button)
+    const container = document.querySelector('.annotation-types');
+    const addButton = document.querySelector('.annotation-type-btn-add');
+    if (container && addButton) {
+        container.insertBefore(newButton, addButton);
+    }
+}
+
+// RLHF Learning functions from the existing JS
+function showLearningWidget(data) {
+    let widget = document.getElementById('learning-widget') || createLearningWidget();
+
+    fetch('/learning/dashboard/')
+        .then(response => response.json())
+        .then(learningData => {
+            const avgScore = (learningData.average_feedback_score * 100).toFixed(0);
+            const {performanceLevel, performanceIcon} = getPerformanceLevel(avgScore);
+
+            widget.innerHTML = `
+                <h4><i class="fas fa-chart-line"></i> Progrès d'Apprentissage IA</h4>
+                <div class="learning-metrics">
+                    <div class="metric">
+                        <span class="metric-label">Score Réel:</span>
+                        <span class="metric-value">${avgScore}%</span>
+                        <span class="performance-indicator">${performanceIcon} ${performanceLevel}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Validations:</span>
+                        <span class="metric-value">${learningData.total_feedbacks}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Amélioration:</span>
+                        <span class="metric-value">📈 Active</span>
+                    </div>
+                </div>
+                <div class="learning-explanation">
+                    <small><i class="fas fa-info-circle"></i> Score basé sur annotations correctes, erreurs et manqués</small>
+                </div>
+            `;
+            widget.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Learning Dashboard Error:', error);
+            widget.innerHTML = `
+                <h4><i class="fas fa-chart-line"></i> Progrès d'Apprentissage</h4>
+                <div class="learning-error">
+                    <i class="fas fa-exclamation-triangle"></i> Données non disponibles
+                </div>
+            `;
+        });
+}
+
+function createLearningWidget() {
+    const widget = document.createElement('section');
+    widget.id = 'learning-widget';
+    widget.className = 'learning-dashboard-widget';
+    document.querySelector('.text-content-card')?.appendChild(widget);
+    return widget;
+}
+
+function getPerformanceLevel(score) {
+    score = parseInt(score);
+    if (score >= 90) return {performanceLevel: 'Excellent', performanceIcon: '🏆'};
+    if (score >= 75) return {performanceLevel: 'Bon', performanceIcon: '👍'};
+    if (score >= 50) return {performanceLevel: 'Apprentissage', performanceIcon: '🎓'};
+    return {performanceLevel: 'Nécessite entrainement', performanceIcon: '📚'};
+}
+
+let contextMenuTarget = null;
+
+// Context menu functionality
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Add right-click event listeners to all annotation type buttons
+    function addContextMenuToButtons() {
+        document.querySelectorAll('.annotation-type-btn').forEach(btn => {
+            // Remove existing listeners to prevent duplicates
+            btn.removeEventListener('contextmenu', handleRightClick);
+            // Add new listener
+            btn.addEventListener('contextmenu', handleRightClick);
+        });
+    }
+    
+    // Initial setup
+    addContextMenuToButtons();
+    
+    // Update the addNewAnnotationButtonToAnnotateur function to include context menu
+    const originalAddFunction = window.addNewAnnotationButtonToAnnotateur;
+    window.addNewAnnotationButtonToAnnotateur = function(annotationType) {
+        // Call original function
+        originalAddFunction(annotationType);
+        
+        // Add context menu to new button
+        setTimeout(() => {
+            addContextMenuToButtons();
+        }, 100);
+    };
+    
+    // Hide context menu when clicking elsewhere
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.context-menu')) {
+            hideContextMenu();
+        }
+    });
+    
+    // Prevent default context menu on annotation buttons
+    document.addEventListener('contextmenu', function(e) {
+        if (e.target.classList.contains('annotation-type-btn')) {
+            e.preventDefault();
+        }
+    });
+});
+
+function handleRightClick(e) {
+    e.preventDefault();
+    
+    // Don't show context menu for the "Add Custom Type" button
+    if (e.target.classList.contains('annotation-type-btn-add')) {
+        return;
+    }
+    
+    contextMenuTarget = e.target;
+    
+    const contextMenu = document.getElementById('context-menu');
+    const rect = e.target.getBoundingClientRect();
+    
+    // Position the context menu
+    contextMenu.style.left = (e.pageX) + 'px';
+    contextMenu.style.top = (e.pageY) + 'px';
+    
+    // Show the menu
+    contextMenu.classList.remove('hidden');
+    
+    console.log('🖱️ Right-clicked on:', e.target.textContent);
+}
+
+function hideContextMenu() {
+    const contextMenu = document.getElementById('context-menu');
+    contextMenu.classList.add('hidden');
+    contextMenuTarget = null;
+}
+
+function deleteAnnotationTypeFromMenu() {
+    if (!contextMenuTarget) {
+        hideContextMenu();
+        return;
+    }
+    
+    const typeName = contextMenuTarget.dataset.type;
+    const displayName = contextMenuTarget.textContent;
+    
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete the annotation type "${displayName}"?\n\nThis action cannot be undone.`)) {
+        hideContextMenu();
+        return;
+    }
+    
+    console.log('🗑️ Deleting annotation type:', typeName);
+    
+    // Get the annotation type ID
+    const typeId = annotationTypeMap[typeName];
+    if (!typeId) {
+        alert('Error: Could not find annotation type to delete');
+        hideContextMenu();
+        return;
+    }
+    
+    // Call backend to delete the annotation type
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch('/delete-annotation-type/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            type_id: typeId,
+            type_name: typeName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            
+            // Remove from mapping
+            delete annotationTypeMap[typeName];
+            console.log('📋 Updated type mapping after deletion:', annotationTypeMap);
+            
+            // Remove the button from interface
+            contextMenuTarget.remove();
+            
+            // Clear selection if this type was selected
+            if (selectedAnnotationType === typeName) {
+                selectedAnnotationType = null;
+                selectedColor = null;
+                document.getElementById('current-mode').textContent = 'Aucun type sélectionné';
+                document.getElementById('current-mode').style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+            }
+            
+            console.log('✅ Annotation type deleted successfully');
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting annotation type: ' + error.message);
+    })
+    .finally(() => {
+        hideContextMenu();
+    });
+}
+// View original document function
+
+function viewOriginalDocument(documentId) {
+    if (!documentId) {
+        alert('Document ID non disponible');
+        return;
+    }
+    
+    // Create the URL to view the original document - SAME AS EXPERT
+    const documentUrl = `/documents/${documentId}/view-original/`;
+    
+    // Open in new window like the expert interface
+    window.open(documentUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+}
+
+// Highlight text in document function
+function highlightTextInDocument(text, startPos, endPos) {
+    const pageDisplay = document.getElementById('text-content');
+
+    // Store the clean original text content
+    const originalTextContent = pageDisplay.textContent;
+
+    // Remove any existing highlights first
+    clearExistingHighlights();
+
+    try {
+        // Reset to clean text content
+        pageDisplay.textContent = originalTextContent;
+
+        let content = pageDisplay.textContent;
+        let targetText = text.trim();
+
+        let textIndex = -1;
+        let foundText = targetText;
+
+        // BULLETPROOF SEARCH STRATEGIES - Try them all!
+
+        // Strategy 1: Exact match
+        textIndex = content.indexOf(targetText);
+
+        // Strategy 2: Case insensitive
+        if (textIndex === -1) {
+            textIndex = content.toLowerCase().indexOf(targetText.toLowerCase());
+        }
+
+        // Strategy 3: Flexible whitespace (spaces, line breaks, tabs)
+        if (textIndex === -1) {
+            const flexiblePattern = targetText.replace(/\s+/g, '\\s+');
+            const regex = new RegExp(flexiblePattern, 'i');
+            const match = content.match(regex);
+
+            if (match) {
+                textIndex = content.search(regex);
+                foundText = match[0];
+            }
+        }
+
+        // Strategy 4: Remove ALL whitespace and punctuation for comparison
+        if (textIndex === -1) {
+            const cleanTarget = targetText.replace(/[\s\(\)\-\.,;:!?]/g, '').toLowerCase();
+            const cleanContent = content.toLowerCase();
+
+            // Find position by removing chars progressively
+            let bestMatch = '';
+            let bestIndex = -1;
+            let bestLength = 0;
+
+            for (let i = 0; i < content.length - cleanTarget.length + 1; i++) {
+                for (let len = cleanTarget.length; len <= cleanTarget.length + 50; len++) {
+                    if (i + len > content.length) break;
+
+                    const candidate = content.substring(i, i + len);
+                    const cleanCandidate = candidate.replace(/[\s\(\)\-\.,;:!?]/g, '').toLowerCase();
+
+                    if (cleanCandidate === cleanTarget) {
+                        bestMatch = candidate;
+                        bestIndex = i;
+                        bestLength = len;
+                        break;
+                    }
+                }
+                if (bestMatch) break;
+            }
+
+            if (bestMatch) {
+                textIndex = bestIndex;
+                foundText = bestMatch;
+            }
+        }
+
+        // Strategy 5: Word-by-word fuzzy matching
+        if (textIndex === -1) {
+            const targetWords = targetText.toLowerCase().split(/\s+/);
+            const contentLower = content.toLowerCase();
+
+            // Find first word
+            const firstWordIndex = contentLower.indexOf(targetWords[0]);
+            if (firstWordIndex !== -1) {
+                // Try to match subsequent words within a reasonable window
+                let currentPos = firstWordIndex;
+                let matchedText = '';
+                let allWordsFound = true;
+
+                for (let word of targetWords) {
+                    const wordPos = contentLower.indexOf(word, currentPos);
+                    if (wordPos !== -1 && wordPos - currentPos < 100) { // Within 100 chars
+                        if (!matchedText) {
+                            matchedText = content.substring(firstWordIndex, wordPos + word.length);
+                        } else {
+                            matchedText = content.substring(firstWordIndex, wordPos + word.length);
+                        }
+                        currentPos = wordPos + word.length;
+                    } else {
+                        allWordsFound = false;
+                        break;
+                    }
+                }
+
+                if (allWordsFound && matchedText) {
+                    textIndex = firstWordIndex;
+                    foundText = matchedText;
+                }
+            }
+        }
+
+        // Strategy 6: Character-by-character similarity matching
+        if (textIndex === -1) {
+            const targetLower = targetText.toLowerCase().replace(/\s+/g, ' ');
+            let bestSimilarity = 0;
+            let bestIndex = -1;
+            let bestMatch = '';
+
+            // Try different window sizes around the target length
+            const minLen = Math.max(5, targetText.length - 10);
+            const maxLen = targetText.length + 20;
+
+            for (let i = 0; i < content.length - minLen; i++) {
+                for (let len = minLen; len <= maxLen && i + len <= content.length; len++) {
+                    const candidate = content.substring(i, i + len);
+                    const candidateLower = candidate.toLowerCase().replace(/\s+/g, ' ');
+
+                    // Calculate similarity (simple character overlap)
+                    let similarity = 0;
+                    const minLength = Math.min(targetLower.length, candidateLower.length);
+
+                    for (let j = 0; j < minLength; j++) {
+                        if (targetLower[j] === candidateLower[j]) {
+                            similarity++;
+                        }
+                    }
+
+                    const similarityRatio = similarity / Math.max(targetLower.length, candidateLower.length);
+
+                    if (similarityRatio > bestSimilarity && similarityRatio > 0.7) {
+                        bestSimilarity = similarityRatio;
+                        bestIndex = i;
+                        bestMatch = candidate;
+                    }
+                }
+            }
+
+            if (bestIndex !== -1) {
+                textIndex = bestIndex;
+                foundText = bestMatch;
+            }
+        }
+
+        // Strategy 7: Last resort - partial matching
+        if (textIndex === -1) {
+            const words = targetText.split(/\s+/);
+            for (let word of words) {
+                if (word.length > 3) { // Only try meaningful words
+                    const wordIndex = content.toLowerCase().indexOf(word.toLowerCase());
+                    if (wordIndex !== -1) {
+                        // Found at least one significant word
+                        textIndex = wordIndex;
+                        foundText = word;
+                        console.log(`⚠️ Partial match found: "${word}" from "${targetText}"`);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // HIGHLIGHT THE RESULT
+        if (textIndex !== -1) {
+            console.log(`✅ FOUND: "${foundText}" at position ${textIndex}`);
+
+            // Create highlighted version
+            const beforeText = content.substring(0, textIndex);
+            const highlightedText = content.substring(textIndex, textIndex + foundText.length);
+            const afterText = content.substring(textIndex + foundText.length);
+
+            // Replace with highlighted version
+            pageDisplay.innerHTML =
+                beforeText +
+                '<span id="highlighted-annotation" style="background-color: #fff3cd; padding: 2px 4px; border-radius: 3px; border: 2px solid #ffc107; animation: highlight-pulse 2s ease-in-out;">' +
+                highlightedText +
+                '</span>' +
+                afterText;
+
+            // Scroll to the highlighted text
+            document.getElementById('highlighted-annotation').scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+
+            // Clear any existing timeout
+            if (window.highlightTimeout) {
+                clearTimeout(window.highlightTimeout);
+            }
+
+            // Remove highlight after 5 seconds and restore clean text
+            window.highlightTimeout = setTimeout(() => {
+                pageDisplay.textContent = originalTextContent;
+            }, 5000);
+
+        } else {
+            console.log('❌ NO MATCH FOUND with any strategy for:', targetText);
+            alert('Texte non trouvé même avec recherche avancée: "' + targetText.substring(0, 50) + (targetText.length > 50 ? '...' : '') + '"');
+        }
+    } catch (error) {
+        console.error('Error highlighting text:', error);
+        pageDisplay.textContent = originalTextContent;
+    }
+}
+
+function clearExistingHighlights() {
+    if (window.highlightTimeout) {
+        clearTimeout(window.highlightTimeout);
+    }
+
+    const existingHighlight = document.getElementById('highlighted-annotation');
+    if (existingHighlight) {
+        const parent = existingHighlight.parentNode;
+        parent.replaceChild(document.createTextNode(existingHighlight.textContent), existingHighlight);
+        parent.normalize();
+    }
+}
+
+
+    // Remove any existing highlights
+    const existingHighlight = document.getElementById('highlighted-annotation');
+    if (existingHighlight) {
+        const parent = existingHighlight.parentNode;
+        parent.replaceChild(document.createTextNode(existingHighlight.textContent), existingHighlight);
+        parent.normalize(); // Merge adjacent text nodes
+    }
+
+</script>
+{% endblock %}

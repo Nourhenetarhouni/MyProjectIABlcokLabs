@@ -1,0 +1,122 @@
+{% extends 'submissions/base.html' %}
+
+{% block title %}Nouvelle Soumission{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-rocket"></i> Configurateur de Soumission
+                </h4>
+                <small class="opacity-75">Génération et gestion des dossiers réglementaires</small>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                Nom de la soumission
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.region.id_for_label }}" class="form-label">
+                                Pays/Région
+                            </label>
+                            {{ form.region }}
+                            {% if form.region.errors %}
+                                <div class="text-danger small">{{ form.region.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.variation_type.id_for_label }}" class="form-label">
+                            Type de variation
+                        </label>
+                        {{ form.variation_type }}
+                        {% if form.variation_type.errors %}
+                            <div class="text-danger small">{{ form.variation_type.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="{{ form.change_description.id_for_label }}" class="form-label">
+                            <i class="fas fa-exchange-alt"></i> Changement description
+                        </label>
+                        {{ form.change_description }}
+                        {% if form.change_description.errors %}
+                            <div class="text-danger small">{{ form.change_description.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-magic"></i> Générer Structure CTD Intelligente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Informations d'aide -->
+        <div class="mt-4">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Comment ça marche ?
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="text-info mb-2">
+                                <i class="fas fa-cog fa-2x"></i>
+                            </div>
+                            <h6>Configuration</h6>
+                            <small class="text-muted">Renseignez les détails de votre soumission</small>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="text-success mb-2">
+                                <i class="fas fa-magic fa-2x"></i>
+                            </div>
+                            <h6>Génération IA</h6>
+                            <small class="text-muted">L'IA génère automatiquement la structure CTD optimale</small>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="text-warning mb-2">
+                                <i class="fas fa-edit fa-2x"></i>
+                            </div>
+                            <h6>Personnalisation</h6>
+                            <small class="text-muted">Remplissez et personnalisez vos modules</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mise à jour dynamique des options selon la région sélectionnée
+    const regionField = document.getElementById('{{ form.region.id_for_label }}');
+    const variationField = document.getElementById('{{ form.variation_type.id_for_label }}');
+    
+    regionField.addEventListener('change', function() {
+        // Logique pour adapter les types de variation selon la région
+        console.log('Région sélectionnée:', this.value);
+    });
+});
+</script>
+{% endblock %}

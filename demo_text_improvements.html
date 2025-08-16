@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Améliorations du Formatage de Texte - Avant/Après</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pharma-primary: #0ea5e9;
+            --pharma-primary-dark: #0284c7;
+            --pharma-accent: #10b981;
+            --pharma-text: #1f2937;
+            --pharma-text-soft: #6b7280;
+            --pharma-bg: #f8fafc;
+            --pharma-card: #ffffff;
+            --pharma-border: #e2e8f0;
+            --pharma-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --pharma-radius: 16px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            margin: 0;
+            padding: 2rem;
+            color: var(--pharma-text);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--pharma-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: var(--pharma-text-soft);
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .section {
+            background: var(--pharma-card);
+            border-radius: var(--pharma-radius);
+            box-shadow: var(--pharma-shadow);
+            border: 1px solid var(--pharma-border);
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--pharma-border);
+        }
+
+        .section-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .before .section-header {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .after .section-header {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+
+        /* Style AVANT (ancien) */
+        .text-content-old {
+            border: 2px dashed var(--pharma-primary);
+            border-radius: 8px;
+            background: #e0f2fe;
+            color: var(--pharma-primary-dark);
+            padding: 1.2rem;
+            font-size: 1rem;
+            line-height: 1.6;
+            min-height: 220px;
+            margin: 1.5rem;
+        }
+
+        /* Style APRÈS (amélioré) */
+        .text-content-new {
+            background: #fafbfc;
+            border: 2px solid rgba(59, 130, 246, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            line-height: 1.8;
+            font-size: 1.05rem;
+            color: var(--pharma-text);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 400px;
+            cursor: text;
+            font-family: 'Inter', 'Georgia', 'Times New Roman', serif;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            hyphens: auto;
+            text-align: justify;
+            text-justify: inter-word;
+            letter-spacing: 0.01em;
+            word-spacing: 0.05em;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: border-color 0.3s ease;
+            margin: 1.5rem;
+        }
+
+        .text-content-new:hover {
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .text-content-new::before {
+            content: "";
+            display: block;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, 
+                transparent, 
+                rgba(59, 130, 246, 0.2), 
+                transparent
+            );
+            margin-bottom: 1.5rem;
+        }
+
+        .text-content-new p {
+            margin-bottom: 1.2rem;
+            text-indent: 1.5rem;
+        }
+
+        .text-content-new p:first-child {
+            text-indent: 0;
+        }
+
+        .improvements {
+            background: var(--pharma-card);
+            border-radius: var(--pharma-radius);
+            box-shadow: var(--pharma-shadow);
+            border: 1px solid var(--pharma-border);
+            padding: 2rem;
+        }
+
+        .improvements h3 {
+            color: var(--pharma-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .improvements ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .improvements li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid var(--pharma-accent);
+        }
+
+        .improvements li::before {
+            content: "✅";
+            margin-right: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .sample-text {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Améliorations du Formatage de Texte</h1>
+            <p>Interface d'Annotation & Métadonneur - Avant/Après</p>
+        </div>
+
+        <div class="comparison">
+            <div class="section before">
+                <div class="section-header">
+                    <h3>❌ AVANT - Texte Condensé</h3>
+                </div>
+                <div class="text-content-old">
+                    <div class="sample-text">Guide de Validation des Procédures Pharmaceutiques
+
+1. INTRODUCTION
+
+Ce document présente les procédures de validation pour les processus pharmaceutiques selon les standards européens et internationaux. Les exigences réglementaires évoluent constamment et nécessitent une attention particulière.
+
+2. CRITÈRES DE VALIDATION
+
+Les critères suivants doivent être respectés :
+- Conformité aux Bonnes Pratiques de Fabrication (BPF)
+- Traçabilité complète de tous les processus
+- Documentation exhaustive des procédures
+- Contrôle qualité à chaque étape
+
+3. PROCÉDURES OPÉRATIONNELLES
+
+Chaque procédure doit inclure :
+• Description détaillée des étapes
+• Responsabilités assignées
+• Critères d'acceptation définis
+• Actions correctives en cas de non-conformité</div>
+                </div>
+            </div>
+
+            <div class="section after">
+                <div class="section-header">
+                    <h3>✅ APRÈS - Texte Structuré (PDF-like)</h3>
+                </div>
+                <div class="text-content-new">Guide de Validation des Procédures Pharmaceutiques
+
+1. INTRODUCTION
+
+Ce document présente les procédures de validation pour les processus pharmaceutiques selon les standards européens et internationaux. Les exigences réglementaires évoluent constamment et nécessitent une attention particulière.
+
+2. CRITÈRES DE VALIDATION
+
+Les critères suivants doivent être respectés :
+- Conformité aux Bonnes Pratiques de Fabrication (BPF)
+- Traçabilité complète de tous les processus
+- Documentation exhaustive des procédures
+- Contrôle qualité à chaque étape
+
+3. PROCÉDURES OPÉRATIONNELLES
+
+Chaque procédure doit inclure :
+• Description détaillée des étapes
+• Responsabilités assignées
+• Critères d'acceptation définis
+• Actions correctives en cas de non-conformité</div>
+            </div>
+        </div>
+
+        <div class="improvements">
+            <h3>🚀 Améliorations Apportées</h3>
+            <ul>
+                <li>
+                    <strong>Typographie Améliorée :</strong> Police serif mixte (Inter + Georgia + Times New Roman) pour une meilleure lisibilité
+                </li>
+                <li>
+                    <strong>Espacement Optimisé :</strong> Line-height augmenté à 1.8 et padding généreux (2rem) pour plus de respiration
+                </li>
+                <li>
+                    <strong>Rendu PDF-like :</strong> Text-align justify, espacement des mots et lettres optimisé, anti-aliasing activé
+                </li>
+                <li>
+                    <strong>Structure Visuelle :</strong> Ligne de séparation gradient, indentation des paragraphes, hauteur minimum augmentée
+                </li>
+                <li>
+                    <strong>Bordures Professionnelles :</strong> Bordures solides avec effets hover et ombres intérieures subtiles
+                </li>
+                <li>
+                    <strong>Couleurs Cohérentes :</strong> Palette de couleurs harmonieuse avec variables CSS pour la maintenance
+                </li>
+                <li>
+                    <strong>Responsive Design :</strong> Adaptation automatique aux différentes tailles d'écran
+                </li>
+                <li>
+                    <strong>Accessibilité :</strong> Contraste amélioré et support des technologies d'assistance
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

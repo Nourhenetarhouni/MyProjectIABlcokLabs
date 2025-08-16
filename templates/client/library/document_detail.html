@@ -1,0 +1,819 @@
+{% extends 'client/base.html' %}
+{% load static %}
+{% load document_filters %}
+
+{% block title %}{{ document|document_title }} - Library - RegX Platform{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/library.css' %}">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        .document-detail {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Breadcrumb modernisé */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+            color: #64748b;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: #5a67d8;
+        }
+
+        .breadcrumb .separator {
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        /* Header du document amélioré */
+        .document-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 32px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .document-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(50%, -50%);
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .document-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            line-height: 1.3;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .document-description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            opacity: 0.9;
+        }
+
+        .document-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-outline {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-validated {
+            background: rgba(16, 185, 129, 0.2);
+            color: #dcfce7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fef3c7;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* Section métadonnées modernisée */
+        .metadata-section {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .metadata-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 24px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .metadata-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .metadata-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: #fafbff;
+            border-radius: 12px;
+            border: 2px solid #f1f5f9;
+            transition: all 0.3s ease;
+        }
+
+        .metadata-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+        }
+
+        .metadata-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .metadata-icon.blue {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+        }
+
+        .metadata-icon.green {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .metadata-icon.orange {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .metadata-icon.purple {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+        }
+
+        .metadata-icon.red {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .metadata-icon.teal {
+            background: linear-gradient(135deg, #14b8a6, #0d9488);
+            color: white;
+        }
+
+        .metadata-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .metadata-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .metadata-value {
+            font-size: 1rem;
+            color: #1e293b;
+            font-weight: 600;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        .metadata-value.empty {
+            color: #94a3b8;
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        .metadata-value a {
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .metadata-value a:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+
+        /* Contexte extrait */
+        .context-section {
+            margin-top: 24px;
+            padding: 24px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            border-radius: 16px;
+            border-left: 6px solid #667eea;
+        }
+
+        .context-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .context-content {
+            font-size: 1rem;
+            color: #1e293b;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        /* Sections de contenu */
+        .content-sections {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 32px;
+        }
+
+        .main-content, .sidebar-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        /* Documents similaires */
+        .related-doc {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border: 2px solid #f1f5f9;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            margin-bottom: 12px;
+            background: #fafbff;
+        }
+
+        .related-doc:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .related-doc-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .related-doc-content h5 {
+            font-size: 1rem;
+            margin: 0 0 6px 0;
+            color: #1e293b;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .related-doc-meta {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state .material-icons {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .document-detail {
+                padding: 16px;
+            }
+
+            .document-header {
+                padding: 24px;
+            }
+
+            .document-title {
+                font-size: 1.6rem;
+            }
+
+            .metadata-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content-sections {
+                grid-template-columns: 1fr;
+            }
+
+            .document-actions {
+                flex-direction: column;
+            }
+
+            .breadcrumb {
+                flex-wrap: wrap;
+                padding: 8px 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .metadata-item {
+                padding: 16px;
+            }
+
+            .metadata-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+
+            .document-title {
+                font-size: 1.4rem;
+            }
+        }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="document-detail">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+        <a href="{% url 'client:library:dashboard' %}">
+            <i class="material-icons" style="font-size: 16px;">home</i>
+            Library
+        </a>
+        <span class="separator">›</span>
+        <a href="{% url 'client:library:document_list' %}">Documents</a>
+        <span class="separator">›</span>
+        <span>{{ document.title|truncatechars:50 }}</span>
+    </nav>
+
+    <!-- Document Header -->
+    <div class="document-header">
+        <div class="header-content">
+            <h1 class="document-title">{{ document|document_title|truncatechars:80 }}</h1>
+
+            {% if document.context %}
+            <p class="document-description">{{ document.context }}</p>
+            {% endif %}
+
+            <div class="document-actions">
+                {% if document.is_validated %}
+                <span class="status-badge status-validated">
+                    <i class="material-icons">verified</i>
+                    Validé
+                </span>
+                {% else %}
+                <span class="status-badge status-pending">
+                    <i class="material-icons">schedule</i>
+                    En attente de validation
+                </span>
+                {% endif %}
+
+                {% if document.file and document.is_validated %}
+                <a href="{% url 'client:library:download_document' document.pk %}" class="btn btn-primary">
+                    <i class="material-icons">download</i>
+                    Télécharger
+                </a>
+                {% endif %}
+
+                {% if document.url_source or document.url %}
+                <a href="{{ document.url_source|default:document.url }}" target="_blank" class="btn btn-outline">
+                    <i class="material-icons">open_in_new</i>
+                    Source
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Metadata Section -->
+    <div class="metadata-section">
+        <h2 class="metadata-title">
+            <i class="material-icons">info</i>
+            Métadonnées Extraites par les Métadonneurs
+        </h2>
+
+        <div class="metadata-grid">
+            <!-- Titre du document -->
+            <div class="metadata-item">
+                <div class="metadata-icon blue">
+                    <i class="material-icons">title</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">Titre du Document</div>
+                    <div class="metadata-value">{{ metadata.title|default:"Non spécifié" }}</div>
+                </div>
+            </div>
+
+            <!-- Type de document -->
+            <div class="metadata-item">
+                <div class="metadata-icon blue">
+                    <i class="material-icons">description</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">Type de Document</div>
+                    <div class="metadata-value">{{ metadata.doc_type|default:"Non spécifié" }}</div>
+                </div>
+            </div>
+
+            <!-- Source/Organisation -->
+            <div class="metadata-item">
+                <div class="metadata-icon green">
+                    <i class="material-icons">business</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">Source/Organisation</div>
+                    <div class="metadata-value">{{ metadata.source|default:"Non spécifiée" }}</div>
+                </div>
+            </div>
+
+            <!-- Pays -->
+            <div class="metadata-item">
+                <div class="metadata-icon orange">
+                    <i class="material-icons">public</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">Pays</div>
+                    <div class="metadata-value">{{ metadata.country|default:"Non spécifié" }}</div>
+                </div>
+            </div>
+
+            <!-- Langue -->
+            <div class="metadata-item">
+                <div class="metadata-icon purple">
+                    <i class="material-icons">language</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">Langue</div>
+                    <div class="metadata-value">{{ metadata.language|default:"Non spécifiée" }}</div>
+                </div>
+            </div>
+
+            <!-- Date de publication -->
+            <div class="metadata-item">
+                <div class="metadata-icon red">
+                    <i class="material-icons">calendar_today</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">Date de Publication</div>
+                    <div class="metadata-value">{{ metadata.publication_date|default:"Non spécifiée" }}</div>
+                </div>
+            </div>
+
+            <!-- Version -->
+            <div class="metadata-item">
+                <div class="metadata-icon teal">
+                    <i class="material-icons">label</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">Version</div>
+                    <div class="metadata-value">{{ metadata.version|default:"Non spécifiée" }}</div>
+                </div>
+            </div>
+
+            <!-- URL Source -->
+            {% if metadata.url_source and metadata.url_source != "Non spécifiée" %}
+            <div class="metadata-item">
+                <div class="metadata-icon blue">
+                    <i class="material-icons">link</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">URL Source</div>
+                    <div class="metadata-value">
+                        <a href="{{ metadata.url_source }}" target="_blank">
+                            {{ metadata.url_source|truncatechars:50 }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Nombre de pages -->
+            {% if metadata.total_pages > 0 %}
+            <div class="metadata-item">
+                <div class="metadata-icon orange">
+                    <i class="material-icons">pages</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">Nombre de Pages</div>
+                    <div class="metadata-value">{{ metadata.total_pages }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Métadonneur -->
+            <div class="metadata-item">
+                <div class="metadata-icon green">
+                    <i class="material-icons">person</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">Uploadé par (Métadonneur)</div>
+                    <div class="metadata-value">{{ metadata.owner|default:"Anonyme" }}</div>
+                </div>
+            </div>
+
+            <!-- Date d'ajout -->
+            <div class="metadata-item">
+                <div class="metadata-icon purple">
+                    <i class="material-icons">schedule</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">Date d'Ajout</div>
+                    <div class="metadata-value">{{ metadata.created_at|date:"d F Y à H:i" }}</div>
+                </div>
+            </div>
+
+            <!-- Statut de validation -->
+            <div class="metadata-item">
+                <div class="metadata-icon {% if metadata.is_validated %}green{% else %}orange{% endif %}">
+                    <i class="material-icons">{% if metadata.is_validated %}check_circle{% else %}schedule{% endif %}</i>
+                </div>
+                <div class="metadata-content">
+                    <div class="metadata-label">Statut de Validation</div>
+                    <div class="metadata-value">
+                        {% if metadata.is_validated %}
+                            Validé le {{ metadata.validated_at|date:"d F Y à H:i"|default:"Non spécifié" }}
+                        {% else %}
+                            En attente de validation
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contexte extrait -->
+        {% if document.context %}
+        <div class="context-section">
+            <div class="context-label">Contexte Extrait</div>
+            <div class="context-content">{{ document.context }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Content Sections -->
+    <div class="content-sections">
+        <div class="main-content">
+            <!-- Validation Info -->
+            {% if document.is_validated %}
+            <div class="content-section">
+                <h3 class="section-title">
+                    <i class="material-icons">verified_user</i>
+                    Statut Expert et Validation
+                </h3>
+                <div class="metadata-grid">
+                    <div class="metadata-item">
+                        <div class="metadata-icon green">
+                            <i class="material-icons">check_circle</i>
+                        </div>
+                        <div class="metadata-content">
+                            <div class="metadata-label">Document Validé</div>
+                            <div class="metadata-value">{{ document.validated_at|date:"d F Y à H:i"|default:"Oui" }}</div>
+                        </div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-icon {% if document.is_ready_for_expert %}green{% else %}orange{% endif %}">
+                            <i class="material-icons">{% if document.is_ready_for_expert %}expert_mode{% else %}schedule{% endif %}</i>
+                        </div>
+                        <div class="metadata-content">
+                            <div class="metadata-label">Prêt pour Expert</div>
+                            <div class="metadata-value">
+                                {% if document.is_ready_for_expert %}
+                                    Oui - {{ document.expert_ready_at|date:"d F Y à H:i"|default:"Prêt" }}
+                                {% else %}
+                                    Non
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% if document.pages_extracted %}
+                    <div class="metadata-item">
+                        <div class="metadata-icon blue">
+                            <i class="material-icons">auto_awesome</i>
+                        </div>
+                        <div class="metadata-content">
+                            <div class="metadata-label">Pages Extraites</div>
+                            <div class="metadata-value">Oui ({{ document.total_pages }} pages)</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="sidebar-content">
+            <!-- Documents Related -->
+            {% if related_documents %}
+            <div class="content-section">
+                <h3 class="section-title">
+                    <i class="material-icons">link</i>
+                    Documents Similaires
+                </h3>
+                {% for related in related_documents %}
+                <a href="{% url 'client:library:document_detail' related.pk %}" class="related-doc">
+                    <div class="related-doc-icon">
+                        <i class="material-icons">description</i>
+                    </div>
+                    <div class="related-doc-content">
+                        <h5>{{ related|document_title|truncatechars:60 }}</h5>
+                        <div class="related-doc-meta">
+                            {{ related.source|default:related.country }} • {{ related.doc_type|default:"Document" }}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="content-section">
+                <h3 class="section-title">
+                    <i class="material-icons">link</i>
+                    Documents Similaires
+                </h3>
+                <div class="empty-state">
+                    <i class="material-icons">link_off</i>
+                    <h3>Aucun document similaire</h3>
+                    <p>Aucun document similaire trouvé pour le moment.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/library.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Track document view (could be used for analytics)
+    console.log('Document viewed: {{ document.title|escapejs }}');
+
+    // Animation pour les metadata items
+    const metadataItems = document.querySelectorAll('.metadata-item');
+    metadataItems.forEach((item, index) => {
+        item.style.animationDelay = `${index * 0.1}s`;
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(20px)';
+
+        setTimeout(() => {
+            item.style.transition = 'all 0.6s ease';
+            item.style.opacity = '1';
+            item.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

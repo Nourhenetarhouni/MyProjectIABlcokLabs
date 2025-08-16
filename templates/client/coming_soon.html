@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Bientôt disponible - RegX Platform{% endblock %}
+
+{% block content %}
+<div class="coming-soon-container">
+    <div class="coming-soon-content">
+        <i class="material-icons">construction</i>
+        <h1>Module en cours de développement</h1>
+        <p>Cette fonctionnalité sera disponible dans une prochaine version de RegX Platform.</p>
+        <a href="{% url 'home' %}" class="btn btn-primary">
+            <i class="material-icons">home</i>
+            Retour à l'accueil
+        </a>
+    </div>
+</div>
+
+<style>
+.coming-soon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 40px;
+}
+
+.coming-soon-content {
+    max-width: 500px;
+}
+
+.coming-soon-content i {
+    font-size: 80px;
+    color: #3498db;
+    margin-bottom: 30px;
+}
+
+.coming-soon-content h1 {
+    font-size: 28px;
+    color: #2c3e50;
+    margin-bottom: 20px;
+}
+
+.coming-soon-content p {
+    font-size: 16px;
+    color: #7f8c8d;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+</style>
+{% endblock %}

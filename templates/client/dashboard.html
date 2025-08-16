@@ -1,0 +1,53 @@
+{% extends 'client/base.html' %}
+
+{% block title %}Home - RegX Platform{% endblock %}
+
+{% block content %}
+<div class="home-container">
+    <div class="welcome-section">
+        <h1>Bienvenue sur RegX Platform</h1>
+        <p>Votre plateforme de gestion réglementaire pharmaceutique</p>
+    </div>
+    
+    <div class="modules-grid">
+        <div class="module-card active">
+            <i class="material-icons">library_books</i>
+            <h3>LIBRARY</h3>
+            <p>Disponible maintenant</p>
+            <a href="/client/library/" class="btn btn-primary">Accéder</a>
+        </div>
+        
+        <div class="module-card">
+            <i class="material-icons">assignment</i>
+            <h3>Home</h3>
+            <p>Bientôt disponible</p>
+        </div>
+        
+        <div class="module-card">
+            <i class="material-icons">forum</i>
+            <h3>HA INTERACTIONS</h3>
+            <p>Bientôt disponible</p>
+        </div>
+        
+        <div class="module-card active">
+            <i class="material-icons">inventory</i>
+            <h3>PRODUCTS</h3>
+            <p>Disponible maintenant</p>
+            <a href="/client/products/" class="btn btn-primary">Accéder</a>
+        </div>
+        
+        <div class="module-card active">
+            <i class="material-icons">assessment</i>
+            <h3>REPORTING</h3>
+            <p>Disponible maintenant</p>
+            <a href="/client/reports/" class="btn btn-primary">Accéder</a>
+        </div>
+        <div class="module-card active">
+            <i class="material-icons">assessment</i>
+            <h3>Submissions</h3>
+            <p>Disponible maintenant</p>
+            <a href="/submissions/" class="btn btn-primary">Accéder</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

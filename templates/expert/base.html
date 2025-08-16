@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}RegExpert{% endblock %}</title>
+
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #f8f9fa;
+            --accent-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-color) 0%, #1e3d72 100%);
+            color: white;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-brand h4 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .nav-link i {
+            width: 20px;
+            margin-right: 10px;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+
+        .top-navbar {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .content-wrapper {
+            padding: 0 2rem 2rem 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            <h4><i class="fas fa-user-graduate"></i> RegExpert</h4>
+            <small>Révision & Validation Expert</small>
+        </div>
+
+        <ul class="nav flex-column sidebar-nav">
+            <!-- Dashboard -->
+            <li class="nav-item">
+                <a class="nav-link {% if 'expert:dashboard' in request.resolver_match.view_name %}active{% endif %}" 
+                href="{% url 'expert:dashboard' %}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+
+            <!-- Documents -->
+            <li class="nav-item">
+                <a class="nav-link {% if 'expert:document' in request.resolver_match.view_name %}active{% endif %}" 
+                href="{% url 'expert:document_list' %}">
+                    <i class="fas fa-file-alt"></i> Documents à Réviser
+                </a>
+            </li>
+
+            <!-- Back to Main App -->
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'rawdocs:annotation_dashboard' %}">
+                    <i class="fas fa-arrow-left"></i> Retour à l'annotation
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navbar -->
+        <div class="top-navbar">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">{% block page_title %}Expert{% endblock %}</h5>
+                    <small class="text-muted">{% block page_subtitle %}{% endblock %}</small>
+                </div>
+                <div>
+                    <span class="text-muted">Bonjour, {{ user.username }}</span>
+                    <form method="post" action="{% url 'rawdocs:logout' %}" class="logout-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-logout">
+                            <i class="fas fa-sign-out-alt"></i> Déconnexion
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Wrapper -->
+        <div class="content-wrapper">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

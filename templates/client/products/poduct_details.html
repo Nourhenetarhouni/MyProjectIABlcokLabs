@@ -1,0 +1,888 @@
+{% extends 'client/base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - Détail Produit{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/products.css' %}">
+<style>
+/* Product Detail Specific Styles */
+.product-detail-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.product-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.product-header-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.product-icon-large {
+    width: 4rem;
+    height: 4rem;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.product-title-section h1 {
+    margin: 0 0 0.5rem 0;
+    color: #2c3e50;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.product-subtitle {
+    color: #7f8c8d;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.product-status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+    display: inline-block;
+}
+
+.status-commercialise { background: #d4edda; color: #155724; }
+.status-developpement { background: #fff3cd; color: #856404; }
+.status-arrete { background: #f8d7da; color: #721c24; }
+
+.product-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Tabs */
+.tabs-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.tabs-nav {
+    display: flex;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.tab-button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-button:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.tab-button.active {
+    background: white;
+    color: #3498db;
+    border-bottom-color: #3498db;
+}
+
+.tab-content {
+    padding: 2rem;
+    min-height: 400px;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.modal-close:hover {
+    opacity: 1;
+}
+
+.modal-form {
+    padding: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 0.5rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+    margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+}
+
+/* Site Details Modal */
+.site-details {
+    padding: 1.5rem;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-item label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.detail-item span {
+    color: #6c757d;
+}
+
+/* Loading and Empty States */
+.loading {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+}
+
+.loading i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.empty-state h3 {
+    margin: 1rem 0 0.5rem 0;
+    color: #495057;
+}
+
+/* Sites Specific Styles */
+.sites-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.sites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.site-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.site-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.site-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.site-info i {
+    color: #3498db;
+    font-size: 1.5rem;
+}
+
+.site-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+}
+
+.site-location {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.gmp-badge {
+    background: #d4edda;
+    color: #155724;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 1rem;
+}
+
+.site-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #6c757d;
+    border: 1px solid #ced4da;
+}
+
+.btn-outline:hover {
+    background: #f8f9fa;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .product-detail-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .product-header-info {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .product-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .tabs-nav {
+        flex-direction: column;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .site-item {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .site-actions {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="product-detail-container">
+    <!-- Header -->
+    <div class="product-detail-header">
+        <div class="product-header-info">
+            <div class="product-icon-large">
+                {{ product.form|first|default:"P" }}
+            </div>
+            <div class="product-title-section">
+                <h1 id="product-title">{{ product.name }}</h1>
+                <p class="product-subtitle">{{ product.active_ingredient }} • {{ product.dosage }}</p>
+                <span class="product-status-badge status-{{ product.status }}">
+                    {{ product.get_status_display }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="product-actions">
+            <a href="{% url 'client_products:list' %}" class="btn btn-outline">
+                <i class="material-icons">arrow_back</i>
+                Retour
+            </a>
+            <button class="btn btn-secondary">
+                <i class="material-icons">edit</i>
+                Modifier
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-container">
+        <div class="tabs-nav">
+            <button class="tab-button active" data-tab="overview">
+                <i class="material-icons">info</i>
+                Vue d'ensemble
+            </button>
+            <button class="tab-button" data-tab="sites">
+                <i class="material-icons">factory</i>
+                Sites
+            </button>
+            <button class="tab-button" data-tab="variations">
+                <i class="material-icons">timeline</i>
+                Variations
+            </button>
+            <button class="tab-button" data-tab="regulatory">
+                <i class="material-icons">gavel</i>
+                Réglementaire
+            </button>
+        </div>
+
+        <div class="tab-content" id="tab-content">
+            <!-- Content will be loaded here -->
+            <div class="loading">
+                <i class="material-icons">hourglass_empty</i>
+                <p>Chargement...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Site Modal -->
+<div class="modal" id="addSiteModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🏭 Ajouter un Site de Production</h3>
+            <button class="modal-close" onclick="closeSiteModal()">&times;</button>
+        </div>
+        <form id="addSiteForm" class="modal-form">
+            <div class="form-group">
+                <label>Nom du site *</label>
+                <input type="text" name="site_name" required placeholder="Ex: Laboratoires Servier">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Pays *</label>
+                    <input type="text" name="country" required placeholder="Ex: IRELAND">
+                </div>
+                <div class="form-group">
+                    <label>Ville *</label>
+                    <input type="text" name="city" required placeholder="Ex: Arklow Co. Wicklow">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="gmp_certified">
+                    Site certifié GMP
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="closeSiteModal()">Annuler</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="material-icons">add</i>
+                    Ajouter le Site
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Site Modal -->
+<div class="modal" id="editSiteModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>✏️ Modifier le Site</h3>
+            <button class="modal-close" onclick="closeEditSiteModal()">&times;</button>
+        </div>
+        <form id="editSiteForm" class="modal-form">
+            <input type="hidden" id="edit-site-id" name="site_id">
+            <div class="form-group">
+                <label>Nom du site *</label>
+                <input type="text" id="edit-site-name" name="site_name" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Pays *</label>
+                    <input type="text" id="edit-site-country" name="country" required>
+                </div>
+                <div class="form-group">
+                    <label>Ville *</label>
+                    <input type="text" id="edit-site-city" name="city" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="edit-site-gmp" name="gmp_certified">
+                    Site certifié GMP
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="closeEditSiteModal()">Annuler</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="material-icons">save</i>
+                    Sauvegarder
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- View Site Modal -->
+<div class="modal" id="viewSiteModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>👁️ Détails du Site</h3>
+            <button class="modal-close" onclick="closeViewSiteModal()">&times;</button>
+        </div>
+        <div class="site-details">
+            <div class="detail-item">
+                <label>Nom du site:</label>
+                <span id="view-site-name"></span>
+            </div>
+            <div class="detail-item">
+                <label>Localisation:</label>
+                <span id="view-site-location"></span>
+            </div>
+            <div class="detail-item">
+                <label>Certification GMP:</label>
+                <span id="view-site-gmp"></span>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-primary" onclick="closeViewSiteModal()">Fermer</button>
+        </div>
+    </div>
+</div>
+<!-- Add Variation Modal -->
+<div class="modal" id="addVariationModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📋 Ajouter une Variation</h3>
+            <button class="modal-close" onclick="closeVariationModal()">&times;</button>
+        </div>
+        <form id="addVariationForm" class="modal-form">
+            <div class="form-group">
+                <label>Nom de la soumission *</label>
+                <input type="text" name="title" required placeholder="Ex: EUA">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Pays/Région *</label>
+                    <select name="country" required>
+                        <option value="">---------</option>
+                        <option value="Union Européenne (EMA)">Union Européenne (EMA)</option>
+                        <option value="États-Unis (FDA)">États-Unis (FDA)</option>
+                        <option value="Canada (Health Canada)">Canada (Health Canada)</option>
+                        <option value="Japon (PMDA)">Japon (PMDA)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Type de variation *</label>
+                    <select name="variation_type" required>
+                        <option value="">---------</option>
+                        <option value="type_ia">Variation Type IA</option>
+                        <option value="type_ib">Variation Type IB</option>
+                        <option value="type_ii">Variation Type II</option>
+                        <option value="maa">Marketing Authorization Application</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>📝 Changement description *</label>
+                <select name="description" required>
+                    <option value="">Ajout de site de fabrication primaire</option>
+                    <option value="Ajout de site de fabrication primaire">Ajout de site de fabrication primaire</option>
+                    <option value="Changement des spécifications">Changement des spécifications</option>
+                    <option value="Modification de l'étiquetage">Modification de l'étiquetage</option>
+                    <option value="Extension d'indication">Extension d'indication</option>
+                    <option value="Nouveau dosage">Nouveau dosage</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Date de soumission *</label>
+                <input type="date" name="submission_date" required>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="closeVariationModal()">Annuler</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="material-icons">add</i>
+                    Ajouter la Variation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/main.js' %}"></script>
+<script>
+// Initialize product detail
+const productId = {{ product.id }};
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.productsApp) {
+        window.productsApp.currentProductId = productId;
+        window.productsApp.selectProduct(productId);
+    }
+});
+
+// Modal management functions
+function closeSiteModal() {
+    document.getElementById('addSiteModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    document.getElementById('addSiteForm').reset();
+}
+
+function closeEditSiteModal() {
+    document.getElementById('editSiteModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function closeViewSiteModal() {
+    document.getElementById('viewSiteModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Form submission handlers
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Site Form
+    const addForm = document.getElementById('addSiteForm');
+    if (addForm) {
+        addForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const siteData = {
+                site_name: formData.get('site_name'),
+                country: formData.get('country'),
+                city: formData.get('city'),
+                gmp_certified: formData.get('gmp_certified') === 'on'
+            };
+            
+            try {
+                const response = await fetch(`/client/products/api/products/${productId}/sites/add/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify(siteData)
+                });
+                
+                if (response.ok) {
+                    showNotification('Site ajouté avec succès', 'success');
+                    closeSiteModal();
+                    if (window.productsApp) {
+                        window.productsApp.loadSitesTab();
+                    }
+                } else {
+                    showNotification('Erreur lors de l\'ajout', 'error');
+                }
+            } catch (error) {
+                showNotification('Erreur de connexion', 'error');
+            }
+        });
+    }
+    
+    // Edit Site Form
+    const editForm = document.getElementById('editSiteForm');
+    if (editForm) {
+        editForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const siteId = formData.get('site_id');
+            const siteData = {
+                site_name: formData.get('site_name'),
+                country: formData.get('country'),
+                city: formData.get('city'),
+                gmp_certified: formData.get('gmp_certified') === 'on'
+            };
+            
+            try {
+                const response = await fetch(`/client/products/api/sites/${siteId}/edit/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify(siteData)
+                });
+                
+                if (response.ok) {
+                    showNotification('Site modifié avec succès', 'success');
+                    closeEditSiteModal();
+                    if (window.productsApp) {
+                        window.productsApp.loadSitesTab();
+                    }
+                } else {
+                    showNotification('Erreur lors de la modification', 'error');
+                }
+            } catch (error) {
+                showNotification('Erreur de connexion', 'error');
+            }
+        });
+        
+    }
+    const addVariationForm = document.getElementById('addVariationForm');
+    if (addVariationForm) {
+        addVariationForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const variationData = {
+                title: formData.get('title'),
+                variation_type: formData.get('variation_type'),
+                description: formData.get('description'),
+                submission_date: formData.get('submission_date'),
+                country: formData.get('country')
+            };
+            
+            try {
+                const response = await fetch(`/client/products/api/products/${productId}/variations/add/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify(variationData)
+                });
+                
+                if (response.ok) {
+                    showNotification('✅ Variation ajoutée avec succès', 'success');
+                    closeVariationModal();
+                    // Reload variations tab
+                    if (window.productsApp) {
+                        window.productsApp.loadVariationsTab();
+                    }
+                } else {
+                    showNotification('❌ Erreur lors de l\'ajout', 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Erreur de connexion', 'error');
+            }
+        });
+    }
+});
+
+// Utility functions
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 6px;
+        color: white;
+        font-weight: 500;
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+        background-color: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : '#3498db'};
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function closeVariationModal() {
+    document.getElementById('addVariationModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    document.getElementById('addVariationForm').reset();
+}
+
+</script>
+{% endblock %}

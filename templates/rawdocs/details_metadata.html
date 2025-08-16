@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+{% block title %}Métadonnées – {{ doc.basename }}{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --primary: #0ea5e9;
+    --primary-light: #38bdf8;
+    --primary-dark: #0284c7;
+    --accent: #10b981;
+    --accent-light: #34d399;
+    --warning: #f59e0b;
+    --error: #dc2626;
+    --text: #000000;
+    --text-muted: #6b7280;
+    --text-secondary: #4b5563;
+    --card-bg: rgba(255,255,255,0.09);
+    --card-border: rgba(14,165,233,0.15);
+    --glass-bg: rgba(255,255,255,0.06);
+    --hover-bg: rgba(255,255,255,0.13);
+}
+
+/* Layout & Container */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 2.3rem auto 0;
+    padding: 0 1.5rem 2.5rem 1.5rem;
+}
+.flex-responsive {
+    display: flex;
+    flex-direction: column;
+    gap: 2.2rem;
+}
+@media (min-width: 1024px) {
+    .flex-responsive { flex-direction: row; }
+    .main-panel { width: 66%; }
+    .sidebar-panel { width: 34%; }
+}
+.main-panel, .sidebar-panel { min-width: 0; }
+
+/* Cards */
+.card {
+    background: var(--card-bg);
+    backdrop-filter: blur(14px);
+    border: 1.7px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.5rem 1.7rem 2rem 1.7rem;
+    margin-bottom: 0;
+    box-shadow: 0 2px 8px rgba(14,165,233,0.04);
+    transition: box-shadow 0.3s;
+}
+.card-title {
+    font-size: 1.18rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1.15rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.78rem 1.4rem;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.97rem;
+    border: none;
+    gap: 0.6rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.23s cubic-bezier(.4,0,.2,1);
+}
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    box-shadow: 0 4px 12px rgba(14,165,233,0.16);
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--accent), var(--primary-light));
+    transform: translateY(-2px) scale(1.02);
+}
+.btn-outline {
+    background: transparent;
+    color: var(--primary-dark);
+    border: 1.3px solid var(--primary-light);
+}
+.btn-outline:hover {
+    background: var(--hover-bg);
+    color: var(--primary);
+    border-color: var(--primary-light);
+    transform: scale(1.05);
+}
+.btn-refuse {
+    background: rgba(220,38,38,0.12);
+    color: #dc2626;
+    border: 1.3px solid #dc2626;
+}
+.btn-refuse:hover {
+    background: #dc2626;
+    color: white;
+}
+.btn-view {
+    color: var(--primary);
+    border: 1.3px solid var(--primary-light);
+}
+.btn-view:hover {
+    background: rgba(56,189,248,0.1);
+    color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+/* Badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background-color: rgba(16,185,129,0.10);
+    color: rgb(16,185,129);
+    margin-left: .35rem;
+    gap: 0.35rem;
+}
+.badge-success { background-color: rgba(16,185,129,0.10); color: rgb(16,185,129);}
+.badge-info { background-color: rgba(14,165,233,0.09); color: var(--primary);}
+.badge-warning { background-color: rgba(245,158,11,0.10); color: #f59e0b;}
+.badge-error { background-color: rgba(220,38,38,0.13); color: #dc2626;}
+
+/* Inputs and labels */
+label { color: var(--primary-dark); }
+input[type="text"], input[type="url"], textarea, select {
+    width: 100%;
+    background: var(--glass-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 1rem;
+    padding: 0.7rem 1rem;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+input[type="text"]:focus, input[type="url"]:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 2px var(--primary-light);
+    background: rgba(56,189,248,0.06);
+}
+label.block { margin-bottom: 0.4rem; font-weight:500; font-size:0.98rem;}
+.form-group { margin-bottom: 1.25rem; }
+
+/* Progress bar */
+.progress-container {
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+    height: 6px;
+    margin-top: .6rem;
+    overflow: hidden;
+    position: relative;
+}
+.progress-bar {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+    position: relative;
+    background: linear-gradient(90deg, #10b981, #38bdf8);
+}
+
+/* Extraction champs */
+.champ-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.33rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.80rem;
+    font-weight: 600;
+    background: rgba(14,165,233,0.13);
+    color: var(--primary-dark);
+    margin-right: 0.4rem;
+}
+
+/* Historique */
+.history-entry {
+    border: 1.3px solid var(--card-border);
+    border-radius: 10px;
+    background: var(--glass-bg);
+    padding: 1.1rem 1rem;
+    margin-bottom: 0.9rem;
+}
+.history-entry:last-child { margin-bottom: 0; }
+.history-field { color: var(--primary-dark); font-size:0.96rem; font-weight:600;}
+.history-date { font-size:0.81rem; color:var(--text-muted);}
+.history-values { color: var(--text); font-size: 0.96rem;}
+.history-user { font-size: 0.83rem; color: var(--text-muted); display: flex; align-items: center; gap:0.32rem;}
+/* Responsive */
+@media (max-width: 1024px) {
+    .flex-responsive { flex-direction: column; }
+    .main-panel, .sidebar-panel { width: 100%; }
+    .dashboard-container { padding: 0 1rem; }
+    .card { padding: 1rem;}
+}
+</style>
+
+<div class="dashboard-container">
+    <div class="flex-responsive">
+        <!-- Main form -->
+        <div class="main-panel">
+            <div class="card">
+                <!-- Header -->
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid var(--card-border); padding-bottom:1.1rem; margin-bottom:2.1rem;">
+                    <h2 class="card-title">
+                        <i class="fas fa-edit" style="color:var(--primary-light);"></i>
+                        Métadonnées du document
+                    </h2>
+                    <div style="display:flex; gap:0.7rem;">
+                        <button type="button" onclick="reextractMetadata()" class="btn btn-outline" title="Réextraire">
+                            <i class="fas fa-sync"></i> Réextraire
+                        </button>
+                        <button type="button" class="btn btn-refuse" title="Refuser le document">
+                            <i class="fas fa-times"></i> Refuser
+                        </button>
+                        <a href="{{ doc.file.url }}" target="_blank"
+                           class="btn btn-view" title="Voir le document">
+                            <i class="fas fa-eye"></i> Voir le doc
+                        </a>
+                    </div>
+                </div>
+
+                <form id="metadataForm" method="post">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label class="block">
+                            Titre du document
+                            <span class="badge badge-success"><i class="fas fa-magic"></i>Auto-extrait</span>
+                        </label>
+                        <input type="text" name="title"
+                            value="{{ form.title.value|default_if_none:'' }}" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="block">
+                            Type de document
+                            <span class="badge badge-info"><i class="fas fa-search"></i>Auto-détecté</span>
+                        </label>
+                        {{ form.type }}
+                    </div>
+                    <div class="form-group">
+                        <label class="block">
+                            Contexte
+                            <span class="badge badge-info"><i class="fas fa-search"></i>Auto-détecté</span>
+                        </label>
+                        {{ form.context }}
+                    </div>
+                    <div class="form-group">
+                        <label class="block">
+                            Langue
+                            <span class="badge badge-info"><i class="fas fa-globe"></i>Auto-détectée</span>
+                        </label>
+                        {{ form.language }}
+                    </div>
+                    <div class="form-group">
+                        <label class="block">
+                            Date de publication
+                            <span class="badge badge-success"><i class="fas fa-calendar-check"></i>Auto-extraite</span>
+                        </label>
+                        {{ form.publication_date }}
+                    </div>
+                    <div class="form-group">
+                        <label class="block">Version</label>
+                        {{ form.version }}
+                    </div>
+                    <div class="form-group">
+                        <label class="block">
+                            Source
+                            <span class="badge badge-success"><i class="fas fa-database"></i>Auto-extraite</span>
+                        </label>
+                        {{ form.source }}
+                    </div>
+                    <div class="form-group">
+                        <label class="block">URL source</label>
+                        {{ form.url_source }}
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:1rem; padding-top:1.1rem;">
+                        <a href="{% url 'rawdocs:dashboard' %}" class="btn btn-outline">
+                            <i class="fas fa-arrow-left"></i> Retour
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Sauvegarder
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar-panel" style="display:flex; flex-direction:column; gap:2.2rem;">
+            {% if metadata.quality %}
+            <!-- Quality -->
+            <div class="card">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-pie" style="color:var(--primary-light);"></i>
+                    Qualité d'extraction
+                </h3>
+                <div style="margin-bottom:1.5rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+                        <span style="font-size:0.99rem; color:var(--text-muted);">Taux d'extraction</span>
+                        <strong style="font-size:1.1rem; color:var(--primary-dark);">{{ metadata.quality.extraction_rate }}%</strong>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ metadata.quality.extraction_rate }}%"></div>
+                    </div>
+                </div>
+                <div style="margin-bottom:1.2rem;">
+                    <small style="color:var(--text-muted); font-weight:500;">Champs extraits :</small>
+                    <div style="margin-top:0.7rem; display:flex; flex-wrap:wrap; gap:0.5rem;">
+                        {% for field, score in metadata.quality.field_scores.items %}
+                            <span class="champ-badge"><i class="fas fa-check-circle" style="margin-right:0.35em;"></i>{{ field|title }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <small style="color:var(--text-muted); font-weight:500;">Scores de confiance :</small>
+                    <div style="margin-top:0.7rem;">
+                        {% for field, score in metadata.quality.field_scores.items %}
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.18rem;">
+                                <span style="color:var(--primary-dark); font-size:0.99rem;">{{ field|title }}</span>
+                                <span style="font-size:0.98rem; font-weight:600;
+                                    {% if score >= 80 %} color:#10b981;
+                                    {% elif score >= 50 %} color:#f59e0b;
+                                    {% else %} color:#dc2626; {% endif %}">
+                                    {{ score }}%
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- History -->
+            <div class="card">
+                <h3 class="card-title">
+                    <i class="fas fa-history" style="color:var(--text-muted);"></i>
+                    Historique des modifications
+                </h3>
+                <div style="max-height:48vh; overflow-y:auto;">
+                    {% for log in logs %}
+                    <div class="history-entry">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                            <span class="history-field">{{ log.field_name|title }}</span>
+                            <span class="history-date">{{ log.modified_at|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        <div class="history-values">{{ log.old_value }} &rarr; <strong>{{ log.new_value }}</strong></div>
+                        <div class="history-user">
+                            <i class="fas fa-user"></i> {{ log.modified_by.username }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p style="color:var(--text-muted);">Aucune modification enregistrée.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function reextractMetadata() {
+    if (!confirm("Relancer l'extraction automatique ?")) return;
+    alert("Extraction relancée !");
+}
+</script>
+{% endblock %}

@@ -1,0 +1,338 @@
+{% extends 'client/base.html' %}
+{% load static %}
+
+{% block title %}Products - RegX Platform{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/products.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="products-container">
+    <!-- Sidebar Products -->
+    <div class="products-sidebar">
+        <div class="portfolio-header">
+            <div>
+                <h2 class="portfolio-title">
+                    <i class="material-icons">inventory</i>
+                    Portfolio Produits
+                </h2>
+                <div class="search-box">
+                    <i class="material-icons search-icon">search</i>
+                    <input type="text" class="search-input" placeholder="Rechercher produits..." id="search-input">
+                </div>
+            </div>
+        </div>
+        
+        <div class="products-list" id="products-list">
+            <div class="loading">
+                <i class="material-icons">hourglass_empty</i>
+                <p>Chargement des produits...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="products-main">
+        <div class="product-detail-header">
+            <h1 class="product-detail-title" id="product-title">RegXpirin 500mg</h1>
+            <div class="product-actions">
+                <button class="qa-button" id="qa-button">
+                    <i class="material-icons">smart_toy</i>
+                    Q&A IA
+                </button>
+                <button class="modify-button" id="modify-button">
+                    <i class="material-icons">edit</i>
+                    Modifier
+                </button>
+            </div>
+        </div>
+        
+        <div class="tabs-container">
+            <div class="tabs-header">
+                <button class="tab-button active" data-tab="overview">Vue d'ensemble</button>
+                <button class="tab-button" data-tab="sites">Sites</button>
+                <button class="tab-button" data-tab="variations">Variations</button>
+                <button class="tab-button" data-tab="regulatory">Réglementaire</button>
+            </div>
+            
+            <div class="tab-content" id="tab-content">
+                <div class="empty-state">
+                    <i class="material-icons">inventory</i>
+                    <h3>Sélectionnez un produit</h3>
+                    <p>Cliquez sur un produit dans la liste pour voir ses détails</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nouveau Produit Button (Fixed) -->
+<button class="btn btn-primary new-product-btn" id="new-product-btn">
+    <i class="material-icons">add</i>
+    Nouveau Produit
+</button>
+
+<!-- Add Product Modal -->
+<div class="modal-overlay" id="add-product-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Nouveau Produit</h2>
+            <button class="close-btn" id="close-modal">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        
+        <form id="add-product-form">
+            <div class="form-container">
+                <!-- Section Vue d'ensemble (Required) -->
+                <div class="form-section">
+                    <h3>Vue d'ensemble <span class="required">*</span></h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="product-name">Nom du produit <span class="required">*</span></label>
+                            <input type="text" id="product-name" name="name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-ingredient">Principe actif <span class="required">*</span></label>
+                            <input type="text" id="product-ingredient" name="active_ingredient" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-dosage">Dosage <span class="required">*</span></label>
+                            <input type="text" id="product-dosage" name="dosage" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-form">Forme <span class="required">*</span></label>
+                            <select id="product-form" name="form" required>
+                                <option value="">Sélectionner...</option>
+                                <option value="Comprimé">Comprimé</option>
+                                <option value="Gélule">Gélule</option>
+                                <option value="Sirop">Sirop</option>
+                                <option value="Injectable">Injectable</option>
+                                <option value="Crème">Crème</option>
+                                <option value="Pommade">Pommade</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-therapeutic-area">Zone thérapeutique <span class="required">*</span></label>
+                            <input type="text" id="product-therapeutic-area" name="therapeutic_area" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-status">Statut <span class="required">*</span></label>
+                            <select id="product-status" name="status" required>
+                                <option value="">Sélectionner...</option>
+                                <option value="developpement">En développement</option>
+                                <option value="commercialise">Commercialisé</option>
+                                <option value="arrete">Arrêté</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section Réglementaire (Optional) -->
+                <div class="form-section">
+                    <h3>Informations réglementaires <span class="optional">(optionnel)</span></h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="product-amm">Numéro AMM</label>
+                            <input type="text" id="product-amm" name="amm_number">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-approval-date">Date d'approbation</label>
+                            <input type="date" id="product-approval-date" name="approval_date">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-renewal-date">Date de renouvellement</label>
+                            <input type="date" id="product-renewal-date" name="renewal_date">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="product-country">Pays</label>
+                            <select id="product-country" name="country_code">
+                                <option value="">Sélectionner...</option>
+                                <option value="FR">France</option>
+                                <option value="DE">Allemagne</option>
+                                <option value="IT">Italie</option>
+                                <option value="ES">Espagne</option>
+                                <option value="GB">Royaume-Uni</option>
+                                <option value="US">États-Unis</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section Sites (Optional) -->
+                <div class="form-section">
+                    <h3>Sites de production <span class="optional">(optionnel)</span></h3>
+                    <div id="sites-container">
+                        <!-- Sites will be added here dynamically -->
+                    </div>
+                    <button type="button" id="add-site-btn" class="btn btn-secondary">
+                        <i class="material-icons">add</i>
+                        Ajouter un site
+                    </button>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-btn">Annuler</button>
+                <button type="submit" class="btn btn-primary" id="save-btn">
+                    <i class="material-icons">save</i>
+                    Enregistrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal-overlay" id="addVariationModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📋 Ajouter une Variation</h2>
+            <button class="close-btn" onclick="closeVariationModal()">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        
+        <form id="addVariationForm">
+            <div class="form-container">
+                <div class="form-section">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nom de la soumission *</label>
+                            <input type="text" name="title" required placeholder="Ex: EUA">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Pays/Région *</label>
+                            <select name="country" required>
+                                <option value="">---------</option>
+                                <option value="Union Européenne (EMA)">Union Européenne (EMA)</option>
+                                <option value="États-Unis (FDA)">États-Unis (FDA)</option>
+                                <option value="Canada (Health Canada)">Canada (Health Canada)</option>
+                                <option value="Japon (PMDA)">Japon (PMDA)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Type de variation *</label>
+                            <select name="variation_type" required>
+                                <option value="">---------</option>
+                                <option value="type_ia">Variation Type IA</option>
+                                <option value="type_ib">Variation Type IB</option>
+                                <option value="type_ii">Variation Type II</option>
+                                <option value="maa">Marketing Authorization Application</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>📝 Changement description *</label>
+                            <select name="description" required>
+                                <option value="Ajout de site de fabrication primaire">Ajout de site de fabrication primaire</option>
+                                <option value="Changement des spécifications">Changement des spécifications</option>
+                                <option value="Modification de l'étiquetage">Modification de l'étiquetage</option>
+                                <option value="Extension d'indication">Extension d'indication</option>
+                                <option value="Nouveau dosage">Nouveau dosage</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Date de soumission *</label>
+                            <input type="date" name="submission_date" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeVariationModal()">Annuler</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="material-icons">add</i>
+                    Ajouter la Variation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/products.js' %}"></script>
+<script>
+function closeVariationModal() {
+    document.getElementById('addVariationModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    document.getElementById('addVariationForm').reset();
+}
+
+// Handle variation form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const addVariationForm = document.getElementById('addVariationForm');
+    if (addVariationForm) {
+        addVariationForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!window.productsApp || !window.productsApp.currentProductId) {
+                alert('Aucun produit sélectionné');
+                return;
+            }
+            
+            const formData = new FormData(this);
+            const variationData = {
+                title: formData.get('title'),
+                variation_type: formData.get('variation_type'),
+                description: formData.get('description'),
+                submission_date: formData.get('submission_date'),
+                country: formData.get('country')
+            };
+            
+            try {
+                const response = await fetch(`/client/products/api/products/${window.productsApp.currentProductId}/variations/add/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify(variationData)
+                });
+                
+                if (response.ok) {
+                    alert('✅ Variation ajoutée avec succès');
+                    closeVariationModal();
+                    // Reload variations tab
+                    if (window.productsApp) {
+                        window.productsApp.loadVariationsTab();
+                    }
+                } else {
+                    alert('❌ Erreur lors de l\'ajout');
+                }
+            } catch (error) {
+                alert('❌ Erreur de connexion');
+                console.error('Error:', error);
+            }
+        });
+    }
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

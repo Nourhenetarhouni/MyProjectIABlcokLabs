@@ -1,0 +1,792 @@
+{% extends 'client/base.html' %}
+{% load static %}
+{% load document_filters %}
+
+{% block title %}Documents - Bibliothèque{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Container principal - centré et avec marges */
+.library-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    min-height: 100vh;
+}
+
+/* En-tête stylisé - adapté du dashboard */
+.page-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #2563eb 50%, #9333ea 100%);
+    border-radius: 24px;
+    padding: 2.5rem 2.5rem 2rem 2.5rem;
+    margin-bottom: 2.5rem;
+    color: #fff;
+    box-shadow: 0 10px 40px rgba(79,70,229,0.15), 0 4px 20px rgba(99,102,241,0.10);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Effets de background pour l'en-tête */
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.page-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.page-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    position: relative;
+    z-index: 10;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.page-header-icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #be185d 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(239,68,68,0.3);
+}
+
+.page-header-icon .material-icons {
+    font-size: 2.5rem;
+    color: #fff;
+}
+
+.page-header-titles h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.5px;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.page-header-titles p {
+    color: #e0e7ff;
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 400;
+}
+
+.dashboard-tile-links {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.dashboard-tile-link {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    border-radius: 12px;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.dashboard-tile-link:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    color: #fff;
+}
+
+/* Barre de filtres - améliorée */
+.filters-bar {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    border: 1px solid #f1f5f9;
+    padding: 2rem 2.5rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: flex-end;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filters-bar label {
+    font-size: 0.9rem;
+    color: #374151;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filters-bar input,
+.filters-bar select {
+    font-size: 0.95rem;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    padding: 0.75rem 1.25rem;
+    width: 100%;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.filters-bar input:focus,
+.filters-bar select:focus {
+    border: 2px solid #6366f1;
+    outline: none;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+}
+
+.filters-col {
+    flex: 1 1 220px;
+    min-width: 180px;
+    margin-bottom: 0;
+}
+
+.filters-action {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+}
+
+.filters-bar button {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: #fff;
+    font-weight: 700;
+    padding: 0.75rem 2rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+    border: none;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filters-bar button:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(37,99,235,0.4);
+}
+
+/* Section résultats */
+.results-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid #3b82f6;
+}
+
+.results-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.results-header .material-icons {
+    color: #3b82f6;
+    font-size: 1.75rem;
+}
+
+/* Grid de cartes - responsive amélioré */
+.cards-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+/* Card styles - plus espacées et élégantes */
+.document-card {
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+}
+
+.document-card:hover {
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+    transform: translateY(-4px);
+    border-color: #cbd5e1;
+}
+
+.ribbon-validated {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    z-index: 10;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #16a34a;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(34,197,94,0.2);
+    border: 1px solid #bbf7d0;
+}
+
+/* Header Document */
+.document-card-header {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f5f3ff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.document-card-icon {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #be185d 100%);
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(239,68,68,0.3);
+    flex-shrink: 0;
+}
+
+.document-card-icon .material-icons {
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.document-card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #1e293b;
+    line-height: 1.3;
+    transition: color 0.3s ease;
+}
+
+.document-card:hover .document-card-title {
+    color: #2563eb;
+}
+
+.document-card-metas {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: #64748b;
+    flex-wrap: wrap;
+}
+
+.document-card-metas .material-icons {
+    font-size: 1rem;
+    color: #94a3b8;
+}
+
+/* Content area */
+.document-card-body {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Metadata badges */
+.document-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    border-width: 1px;
+    border-style: solid;
+    letter-spacing: 0.025em;
+}
+
+.badge-blue {
+    color: #1d4ed8;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-color: #93c5fd;
+}
+
+.badge-green {
+    color: #059669;
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border-color: #6ee7b7;
+}
+
+.badge-purple {
+    color: #7c3aed;
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    border-color: #c4b5fd;
+}
+
+.badge-orange {
+    color: #ea580c;
+    background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+    border-color: #fb923c;
+}
+
+/* Context */
+.document-card-context {
+    margin: 0.5rem 0 1rem 0;
+    background: linear-gradient(135deg, #f0fdf4 0%, #f5f3ff 100%);
+    border-left: 3px solid #6366f1;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    color: #374151;
+    line-height: 1.4;
+    flex: 1;
+}
+
+/* Actions */
+.document-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #f1f5f9;
+    margin-top: auto;
+}
+
+.document-card-actions a {
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+    border: none;
+    text-decoration: none;
+}
+
+.document-card-actions a:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(37,99,235,0.4);
+    color: #fff;
+}
+
+/* Pagination améliorée */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+}
+
+.pagination-wrapper {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    border: 1px solid #f1f5f9;
+    padding: 1rem;
+}
+
+.pagination-wrapper .flex {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pagination-wrapper a {
+    padding: 0.75rem;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    background: #fff;
+    transition: all 0.3s ease;
+    color: #6b7280;
+}
+
+.pagination-wrapper a:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #2563eb;
+    transform: translateY(-1px);
+}
+
+.pagination-wrapper span {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    border-radius: 12px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+.empty-state .material-icons {
+    font-size: 4rem;
+    color: #9ca3af;
+    margin-bottom: 1.5rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    color: #6b7280;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+.empty-state a {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: #fff;
+    padding: 0.75rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.empty-state a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(37,99,235,0.3);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .library-container {
+        max-width: 100%;
+        padding: 1.5rem;
+    }
+
+    .cards-list {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.25rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .library-container {
+        padding: 1rem;
+    }
+
+    .page-header {
+        padding: 2rem 1.5rem 1.5rem 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .page-header-content {
+        flex-direction: column;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
+
+    .page-header-titles h1 {
+        font-size: 1.75rem;
+    }
+
+    .filters-bar {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+
+    .filters-col, .filters-action {
+        width: 100%;
+    }
+
+    .cards-list {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .dashboard-tile-links {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header-icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .page-header-icon .material-icons {
+        font-size: 2rem;
+    }
+
+    .document-card-header {
+        padding: 1.25rem;
+    }
+
+    .document-card-body {
+        padding: 1.25rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="library-container">
+    <!-- Header stylisé -->
+    <div class="page-header">
+        <div class="page-header-content">
+            <div class="page-header-left">
+                <div class="page-header-icon">
+                    <i class="material-icons">picture_as_pdf</i>
+                </div>
+                <div class="page-header-titles">
+                    <h1>Documents des Métadonneurs</h1>
+                    <p>Parcourir et rechercher dans la bibliothèque documentaire</p>
+                </div>
+            </div>
+            <div class="dashboard-tile-links">
+                <a href="{% url 'client:library:dashboard' %}" class="dashboard-tile-link">
+                    <i class="material-icons">dashboard</i>
+                    Dashboard
+                </a>
+                <a href="{% url 'client:library:document_list_horizontal' %}" class="dashboard-tile-link">
+                    <i class="material-icons">view_list</i>
+                    Vue Liste
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters - horizontal stylisé -->
+    <form method="get" class="filters-bar">
+        <div class="filters-col">
+            <label>RECHERCHE</label>
+            <input type="text" name="search" value="{{ filters.search }}" placeholder="Rechercher un document...">
+        </div>
+        <div class="filters-col">
+            <label>TYPE</label>
+            <select name="type">
+                <option value="">Tous les types</option>
+                {% for type in document_types %}
+                <option value="{{ type }}" {% if filters.type == type %}selected{% endif %}>
+                    {{ type }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filters-col">
+            <label>PAYS</label>
+            <select name="country">
+                <option value="">Tous les pays</option>
+                {% for country in countries %}
+                <option value="{{ country }}" {% if filters.country == country %}selected{% endif %}>
+                    {{ country }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filters-col">
+            <label>LANGUE</label>
+            <select name="language">
+                <option value="">Toutes les langues</option>
+                {% for language in languages %}
+                <option value="{{ language }}" {% if filters.language == language %}selected{% endif %}>
+                    {{ language }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filters-action">
+            <button type="submit">
+                <i class="material-icons" style="font-size:1.1em;vertical-align: middle;">search</i>
+                Rechercher
+            </button>
+        </div>
+    </form>
+
+    <!-- Résultats -->
+    <div class="results-header">
+        <h2>
+            <i class="material-icons">library_books</i>
+            {{ documents.paginator.count }} document{{ documents.paginator.count|pluralize }} trouvé{{ documents.paginator.count|pluralize }}
+        </h2>
+    </div>
+
+    {% if documents %}
+    <div class="cards-list">
+        {% for document in documents %}
+        <div class="document-card" onclick="location.href='{% url 'client:library:document_detail' document.pk %}'">
+
+            <!-- Ribbon Validé -->
+            {% if document.is_validated or document.validated %}
+            <span class="ribbon-validated">
+                <i class="material-icons">verified</i> Validé
+            </span>
+            {% endif %}
+
+            <!-- En-tête Document -->
+            <div class="document-card-header">
+                <div class="document-card-icon">
+                    <i class="material-icons">picture_as_pdf</i>
+                </div>
+                <div style="flex: 1 1 0%">
+                    <div class="document-card-title" title="{{ document|document_title }}">
+                        {{ document|document_title|truncatechars:50 }}
+                    </div>
+                    <div class="document-card-metas">
+                        <i class="material-icons">person</i>
+                        <span>{{ document.owner.username|default:"Anonyme" }}</span>
+                        <span class="w-1 h-1 rounded-full bg-gray-300" style="display:inline-block;width:6px;height:6px;"></span>
+                        <i class="material-icons">date_range</i>
+                        <span>{{ document.created_at|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Corps de la carte -->
+            <div class="document-card-body">
+                <!-- Métadonnées principales en badges -->
+                <div class="document-card-badges">
+                    {% if document.doc_type %}
+                    <span class="card-badge badge-blue">
+                        <i class="material-icons text-xs">category</i>
+                        {{ document.doc_type|truncatechars:20 }}
+                    </span>
+                    {% endif %}
+                    {% if document.country %}
+                    <span class="card-badge badge-green">
+                        <i class="material-icons text-xs">public</i>
+                        {{ document.country|truncatechars:20 }}
+                    </span>
+                    {% endif %}
+                    {% if document.language %}
+                    <span class="card-badge badge-purple">
+                        <i class="material-icons text-xs">language</i>
+                        {{ document.language|truncatechars:20 }}
+                    </span>
+                    {% endif %}
+                    {% if document.source %}
+                    <span class="card-badge badge-orange">
+                        <i class="material-icons text-xs">source</i>
+                        {{ document.source|truncatechars:20 }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Contexte extrait -->
+                {% if document.context %}
+                <div class="document-card-context">
+                    <i class="material-icons text-base" style="vertical-align: middle; color:#4f46e5; margin-right: 0.5rem;">info</i>
+                    <span>{{ document.context|truncatechars:100 }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Actions -->
+            <div class="document-card-actions">
+                <a href="{% url 'client:library:download_document' document.pk %}" onclick="event.stopPropagation();">
+                    <i class="material-icons text-sm">download</i>
+                    Télécharger
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if documents.has_other_pages %}
+    <div class="pagination-container">
+        <div class="pagination-wrapper">
+            <div class="flex items-center space-x-2">
+                {% if documents.has_previous %}
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ documents.previous_page_number }}">
+                        <i class="material-icons">chevron_left</i>
+                    </a>
+                {% endif %}
+                <span>
+                    Page {{ documents.number }} sur {{ documents.paginator.num_pages }}
+                </span>
+                {% if documents.has_next %}
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ documents.next_page_number }}">
+                        <i class="material-icons">chevron_right</i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <i class="material-icons">search_off</i>
+        <h3>Aucun document trouvé</h3>
+        <p>Aucun document ne correspond à vos critères de recherche.</p>
+        <a href="{% url 'client:library:dashboard' %}">
+            <i class="material-icons">dashboard</i>
+            Retour au Dashboard
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

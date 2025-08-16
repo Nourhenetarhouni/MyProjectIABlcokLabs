@@ -1,0 +1,303 @@
+{% extends "base_auth.html" %}
+{% block title %}Inscription – DocuFlow{% endblock %}
+
+{% block content %}
+<style>
+  /* Styles spécifiques au formulaire d'inscription */
+  .auth-card {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+  }
+
+  .auth-card h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1.8rem;
+    position: relative;
+    text-align: center;
+  }
+
+  .auth-card h2::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .form-group {
+    margin-bottom: 1.3rem;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .input::placeholder {
+    color: rgba(226, 232, 240, 0.6);
+    font-size: 0.9rem;
+  }
+
+  /* Style spécifique pour le select */
+  select.input {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e2e8f0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+  }
+
+  /* Style pour les options du select */
+  select.input option {
+    color: #000; /* Texte noir pour les options */
+    background: #fff; /* Fond blanc pour les options */
+  }
+
+  .btn {
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn:hover {
+    background: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.2);
+  }
+
+  .btn-outline {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-block;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.85rem;
+  }
+
+  .btn-outline:hover {
+    color: var(--text);
+    background: rgba(96, 165, 250, 0.1);
+  }
+
+  .messages {
+    list-style: none;
+    padding: 0.8rem;
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid #ef4444;
+    border-radius: 3px;
+    margin-bottom: 1.3rem;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .messages .error {
+    color: #fca5a5;
+    font-size: 0.85rem;
+  }
+
+  .error {
+    color: #fca5a5;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .text-sm {
+    font-size: 0.85rem;
+  }
+
+  .text-gray-600 {
+    color: var(--text-secondary);
+  }
+
+  .mt-6 {
+    margin-top: 1.3rem;
+  }
+
+  .mb-4 {
+    margin-bottom: 0.8rem;
+  }
+
+  .mb-6 {
+    margin-bottom: 1.3rem;
+  }
+
+  .password-requirements {
+    background: rgba(96, 165, 250, 0.1);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    font-size: 0.85rem;
+    border-left: 3px solid var(--accent);
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .password-requirements strong {
+    color: var(--accent);
+  }
+</style>
+
+<div class="auth-form">
+  <h2 class="text-3xl font-bold text-center mb-6">Inscription</h2>
+
+  {# Affiche les messages Django (par exemple, échec de validation) #}
+  {% if messages %}
+    <ul class="messages mb-4">
+      {% for message in messages %}
+        <li class="error">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="post" action="{% url 'rawdocs:register' %}">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+      <input
+        type="text"
+        name="{{ form.username.html_name }}"
+        id="{{ form.username.id_for_label }}"
+        value="{{ form.username.value|default_if_none:'' }}"
+        class="input"
+        placeholder="Nom d'utilisateur"
+        required
+        autofocus
+      />
+      {% for err in form.username.errors %}
+        <div class="error">{{ err }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+      <input
+        type="email"
+        name="{{ form.email.html_name }}"
+        id="{{ form.email.id_for_label }}"
+        value="{{ form.email.value|default_if_none:'' }}"
+        class="input"
+        placeholder="email@domaine.com"
+        required
+      />
+      {% for err in form.email.errors %}
+        <div class="error">{{ err }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.role.id_for_label }}">{{ form.role.label }}</label>
+      <select
+        name="{{ form.role.html_name }}"
+        id="{{ form.role.id_for_label }}"
+        class="input"
+        required
+      >
+        {% for val,label in form.role.field.choices %}
+          <option value="{{ val }}" {% if form.role.value == val %}selected{% endif %}>
+            {{ label }}
+          </option>
+        {% endfor %}
+      </select>
+      {% for err in form.role.errors %}
+        <div class="error">{{ err }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+      <input
+        type="password"
+        name="{{ form.password1.html_name }}"
+        id="{{ form.password1.id_for_label }}"
+        class="input"
+        placeholder="Mot de passe"
+        required
+      />
+      {% for err in form.password1.errors %}
+        <div class="error">{{ err }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="password-requirements">
+      Votre mot de passe doit contenir au moins <strong>un chiffre</strong> et <strong>un caractère spécial</strong> et au moins <strong>8 lettres</strong>.
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+      <input
+        type="password"
+        name="{{ form.password2.html_name }}"
+        id="{{ form.password2.id_for_label }}"
+        class="input"
+        placeholder="Confirmez le mot de passe"
+        required
+      />
+      {% for err in form.password2.errors %}
+        <div class="error">{{ err }}</div>
+      {% endfor %}
+    </div>
+
+    <button type="submit" class="btn">
+      <span>S'enregistrer</span>
+      <i class="fas fa-arrow-right"></i>
+    </button>
+  </form>
+
+  <p class="mt-6 text-center text-sm text-gray-600">
+    Déjà un compte ?
+    <a href="{% url 'rawdocs:login' %}" class="btn-outline">Connectez-vous</a>.
+  </p>
+</div>
+{% endblock %}

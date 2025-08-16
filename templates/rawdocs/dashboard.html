@@ -1,0 +1,989 @@
+{% extends "base.html" %}
+{% load rawdocs_extras %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    /* Variables de couleurs pharmaceutiques */
+    :root {
+        --primary: #0ea5e9;
+        --primary-light: #38bdf8;
+        --primary-dark: #0284c7;
+        --secondary: #1e293b;
+        --secondary-dark: #0f172a;
+        --accent: #10b981;
+        --accent-light: #34d399;
+        --success: #059669;
+        --warning: #f59e0b;
+        --error: #dc2626;
+        --text: #000000; /* Changé en noir */
+        --text-secondary: #4b5563;
+        --text-muted: #6b7280;
+        --card-bg: rgba(255, 255, 255, 0.08);
+        --card-border: rgba(14, 165, 233, 0.15);
+        --glass-bg: rgba(255, 255, 255, 0.05);
+        --hover-bg: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Container principal */
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 1.5rem auto 0;
+        padding: 0 1.5rem;
+    }
+
+    /* Navigation tabs raffinée */
+    .nav-tabs {
+        display: flex;
+        background: var(--glass-bg);
+        border-radius: 12px;
+        padding: 0.5rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--card-border);
+    }
+
+    .nav-tab {
+        padding: 0.75rem 1.25rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        border-radius: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+    }
+
+    .nav-tab:hover {
+        color: var(--text-secondary);
+        background: var(--hover-bg);
+        transform: translateY(-1px);
+    }
+
+    .nav-tab.active {
+        color: var(--primary);
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+
+    /* Cards élégantes */
+    .card {
+        background: var(--card-bg);
+        backdrop-filter: blur(15px);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--primary-light), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px rgba(14, 165, 233, 0.15);
+        border-color: var(--primary-light);
+    }
+
+    .card:hover::before {
+        opacity: 1;
+    }
+
+    .card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text); /* Noir */
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    /* Statistiques */
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text); /* Noir */
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 400;
+        letter-spacing: 0.025em;
+    }
+
+    /* Icônes statistiques */
+    .stat-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+    }
+
+    .stat-icon.documents {
+        background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+
+    .stat-icon.progress {
+        background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .stat-icon.completed {
+        background: linear-gradient(135deg, #10b981, #34d399);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .stat-icon.refused {
+        background: linear-gradient(135deg, #dc2626, #ef4444);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    /* Barres de progression */
+    .progress-container {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        height: 6px;
+        margin-top: 1rem;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-bar {
+        height: 100%;
+        border-radius: 6px;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    /* Tableaux */
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    .table th {
+        text-align: left;
+        padding: 0.875rem 1rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .table td {
+        padding: 1rem;
+        color: var(--text); /* Noir */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 0.875rem;
+    }
+
+    .table tr {
+        transition: all 0.2s ease;
+    }
+
+    .table tr:hover td {
+        background: var(--hover-bg);
+    }
+
+    /* Badges de statut */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        gap: 0.375rem;
+    }
+
+    .status-badge.validated {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-badge.pending {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .status-badge.attention {
+        background: rgba(220, 38, 38, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(220, 38, 38, 0.3);
+    }
+
+    /* Boutons */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.25rem;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        cursor: pointer;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);
+    }
+
+    /* Activité récente */
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 0.875rem;
+        border-radius: 10px;
+        background: var(--glass-bg);
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+    }
+
+    .activity-item:hover {
+        background: var(--hover-bg);
+        border-color: var(--card-border);
+        transform: translateX(4px);
+    }
+
+    .activity-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.875rem;
+        font-size: 0.75rem;
+    }
+
+    .activity-text {
+        flex: 1;
+    }
+
+    .activity-title {
+        font-size: 0.825rem;
+        font-weight: 500;
+        color: var(--text); /* Noir */
+        margin-bottom: 0.125rem;
+    }
+
+    .activity-time {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    /* Actions de table */
+    .table-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .action-btn {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 0.75rem;
+        text-decoration: none;
+    }
+
+    .action-btn.view {
+        background: rgba(14, 165, 233, 0.15);
+        color: var(--primary-light);
+    }
+
+    .action-btn.delete {
+        background: rgba(220, 38, 38, 0.15);
+        color: #f87171;
+    }
+
+    .action-btn.validate {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+    }
+
+    .action-btn:hover {
+        transform: scale(1.1);
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .animate-slide-up {
+        animation: fadeInUp 0.5s ease-out;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .dashboard-container {
+            margin-top: 1rem;
+            padding: 0 1rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+        }
+
+        .nav-tab {
+            padding: 0.625rem 1rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .nav-tabs {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .table-actions {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+    }
+
+    /* Titre principal */
+    .main-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text); /* Noir */
+        margin-bottom: 2rem;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Grid responsive */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Chart containers */
+    .chart-container {
+        position: relative;
+        height: 280px;
+    }
+
+    /* Header des charts */
+    .chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: between;
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .chart-action {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 6px;
+        background: var(--glass-bg);
+        border: 1px solid var(--card-border);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        font-size: 0.75rem;
+    }
+
+    .chart-action:hover {
+        color: var(--primary-light);
+        border-color: var(--primary-light);
+        background: rgba(14, 165, 233, 0.1);
+    }
+</style>
+
+<div class="dashboard-container">
+    <!-- Navigation tabs -->
+    <div class="nav-tabs">
+        <button id="tab-dashboard" class="nav-tab active">
+            <i class="fas fa-chart-line"></i>
+            Tableau de bord
+        </button>
+        <button id="tab-metadata" class="nav-tab">
+            <i class="fas fa-clipboard-check"></i>
+            Validation Métadonnées
+        </button>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboard-tab" class="tab-content block">
+        <h1 class="main-title">Tableau de bord</h1>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <!-- Documents Scrappés -->
+            <div id="card-scrapped" class="card animate-fade-in cursor-pointer">
+
+                <div class="stat-icon documents">
+                    <i class="fas fa-file-medical text-white"></i>
+                </div>
+                <div class="stat-value">{{ total_scrapped }}</div>
+                <div class="stat-label">Documents scrappés sur {{ total_planned }} planifiés</div>
+                <div class="progress-container">
+                    <div class="progress-bar bg-gradient-to-r from-sky-500 to-sky-400"
+                         style="width: {% if total_planned > 0 %}{% widthratio total_scrapped total_planned 100 %}%{% else %}0%{% endif %}"></div>
+                </div>
+            </div>
+
+            <!-- En cours -->
+            <div class="card animate-fade-in" style="animation-delay: 0.1s">
+                <div class="stat-icon progress">
+                    <i class="fas fa-pills text-white"></i>
+                </div>
+                <div class="stat-value">{{ in_progress }}</div>
+                <div class="stat-label">En cours sur {{ total_in_reextraction }} en réextraction</div>
+                <div class="progress-container">
+                    <div class="progress-bar bg-gradient-to-r from-amber-500 to-yellow-400"
+                         style="width: {% if total_in_reextraction > 0 %}{% widthratio in_progress total_in_reextraction 100 %}%{% else %}0%{% endif %}"></div>
+                </div>
+            </div>
+
+            <!-- Terminés -->
+            <div class="card animate-fade-in" style="animation-delay: 0.2s">
+                <div class="stat-icon completed">
+                    <i class="fas fa-check-circle text-white"></i>
+                </div>
+                <div class="stat-value">{{ total_completed }}</div>
+                <div class="stat-label">Terminés sur {{ total_scrapped }} scrappés</div>
+                <div class="progress-container">
+                    <div class="progress-bar bg-gradient-to-r from-emerald-500 to-teal-400"
+                         style="width: {% if total_scrapped > 0 %}{% widthratio total_completed total_scrapped 100 %}%{% else %}0%{% endif %}"></div>
+                </div>
+            </div>
+
+            <!-- Documents Refusés -->
+            <div class="card animate-fade-in" style="animation-delay: 0.3s">
+                <div class="stat-icon refused">
+                    <i class="fas fa-exclamation-triangle text-white"></i>
+                </div>
+                <div class="stat-value">{{ documents_refused|default:0 }}</div>
+                <div class="stat-label">Documents nécessitant une correction</div>
+                <div class="mt-4">
+                    <div class="status-badge attention">
+                        <i class="fas fa-bell"></i>
+                        Attention requise
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-grid">
+            <!-- Bar Chart -->
+            <div class="card animate-slide-up">
+                <div class="chart-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-bar text-sky-400"></i>
+                        Indicateurs de Performance
+                    </h2>
+                    <div class="chart-actions">
+                        <button class="chart-action" title="Actualiser">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="chart-action" title="Exporter">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Pie Chart -->
+            <div class="card animate-slide-up" style="animation-delay: 0.1s">
+                <div class="chart-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-pie text-emerald-400"></i>
+                        Répartition des Tâches
+                    </h2>
+                    <div class="chart-actions">
+                        <button class="chart-action" title="Actualiser">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="chart-action" title="Exporter">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card animate-slide-up" style="animation-delay: 0.2s">
+            <h2 class="card-title">
+                <i class="fas fa-activity text-amber-400"></i>
+                Activité Récente
+            </h2>
+            <div class="space-y-2">
+                <div class="activity-item">
+                    <div class="activity-icon bg-gradient-to-r from-sky-500 to-sky-400">
+                        <i class="fas fa-file-medical text-white"></i>
+                    </div>
+                    <div class="activity-text">
+                        <div class="activity-title">Nouveau document pharmaceutique ajouté</div>
+                        <div class="activity-time">Il y a 5 minutes</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon bg-gradient-to-r from-emerald-500 to-teal-400">
+                        <i class="fas fa-check text-white"></i>
+                    </div>
+                    <div class="activity-text">
+                        <div class="activity-title">Validation métadonnées médicament terminée</div>
+                        <div class="activity-time">Il y a 12 minutes</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon bg-gradient-to-r from-amber-500 to-yellow-400">
+                        <i class="fas fa-cog text-white"></i>
+                    </div>
+                    <div class="activity-text">
+                        <div class="activity-title">Extraction données en cours</div>
+                        <div class="activity-time">Il y a 18 minutes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metadata Validation Tab -->
+    <div id="metadata-tab" class="tab-content hidden">
+        <div class="flex justify-end mb-2">
+            <a href="{% url 'rawdocs:upload' %}" class="btn btn-primary text-sm px-3 py-2 rounded-md">
+                <i class="fas fa-upload mr-1"></i> Importer
+            </a>
+        </div>    
+        <div class="card">
+            <h2 class="card-title" style="color: #000000;"> <!-- Noir explicitement défini -->
+                <i class="fas fa-folder-medical text-sky-400"></i>
+                Documents Pharmaceutiques Importés
+            </h2>
+
+            {% if documents %}
+                <div class="overflow-x-auto">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Fichier</th>
+                                <th>Date d'import</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents %}
+                            <tr>
+                                <td>
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-file-pdf text-red-400"></i>
+                                        {{ doc.file.name|basename }}
+                                    </div>
+                                </td>
+                                <td>{{ doc.created_at|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% if doc.is_validated %}
+                                        <div class="status-badge validated">
+                                            <i class="fas fa-check-circle"></i>
+                                            Validé
+                                        </div>
+                                    {% else %}
+                                        <div class="status-badge pending">
+                                            <i class="fas fa-clock"></i>
+                                            En attente
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <a href="{% url 'rawdocs:edit_metadata' doc.id %}"
+                                           class="action-btn view"
+                                           title="Voir / éditer les métadonnées">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <form method="post"
+                                              action="{% url 'rawdocs:document_delete' doc.id %}"
+                                              class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="action-btn delete"
+                                                    title="Supprimer"
+                                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce document ?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% if not doc.is_validated %}
+                                        <a href="{% url 'rawdocs:validate_document' doc.id %}"
+                                           class="action-btn validate"
+                                           title="Valider pour annotation">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <i class="fas fa-inbox text-4xl text-gray-500 mb-4"></i>
+                    <p class="text-gray-400 mb-4">Aucun document pharmaceutique importé pour le moment.</p>
+                    <p class="text-sm text-gray-500">Commencez par importer vos premiers documents PDF</p>
+                </div>
+            {% endif %}
+
+            <div class="mt-6">
+                <a href="{% url 'rawdocs:upload' %}" class="btn btn-primary">
+                    <i class="fas fa-upload"></i>
+                    Importer un nouveau PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const barData = JSON.parse('{{ bar_data|escapejs }}');
+    const pieData = JSON.parse('{{ pie_data|escapejs }}');
+
+    // Configuration des couleurs pharmaceutiques
+    const colors = {
+        primary: '#0ea5e9',
+        success: '#10b981',
+        warning: '#f59e0b',
+        error: '#dc2626',
+        info: '#38bdf8'
+    };
+
+    // Bar Chart
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Planifiés', 'Scrappés', 'Terminés', 'En cours'],
+            datasets: [{
+                label: 'Documents',
+                data: barData,
+                backgroundColor: [
+                    'rgba(14, 165, 233, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(52, 211, 153, 0.8)',
+                    'rgba(245, 158, 11, 0.8)'
+                ],
+                borderColor: [
+                    colors.primary,
+                    colors.success,
+                    '#34d399',
+                    colors.warning
+                ],
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: colors.primary,
+                    borderWidth: 1,
+                    cornerRadius: 10,
+                    padding: 12,
+                    displayColors: false,
+                    titleFont: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 13
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.05)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#cbd5e1',
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#cbd5e1',
+                        font: {
+                            size: 11
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    });
+
+    // Pie Chart
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Extraction', 'Validation', 'Annotation', 'Correction', 'Finalisation'],
+            datasets: [{
+                data: pieData,
+                backgroundColor: [
+                    'rgba(14, 165, 233, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(220, 38, 38, 0.8)',
+                    'rgba(56, 189, 248, 0.8)'
+                ],
+                borderColor: [
+                    colors.primary,
+                    colors.success,
+                    colors.warning,
+                    colors.error,
+                    colors.info
+                ],
+                borderWidth: 2,
+                hoverBackgroundColor: [
+                    'rgba(14, 165, 233, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(220, 38, 38, 1)',
+                    'rgba(56, 189, 248, 1)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#cbd5e1',
+                        font: {
+                            size: 11,
+                            weight: '500'
+                        },
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: colors.primary,
+                    borderWidth: 1,
+                    cornerRadius: 10,
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 13
+                    }
+                }
+            },
+            interaction: {
+                intersect: false
+            }
+        }
+    });
+
+    // Tab switching avec animations fluides
+    const dashboardTab = document.getElementById('dashboard-tab');
+    const metadataTab = document.getElementById('metadata-tab');
+    const btnDashboard = document.getElementById('tab-dashboard');
+    const btnMetadata = document.getElementById('tab-metadata');
+
+    function switchTab(activeTab, activeBtn, inactiveTab, inactiveBtn) {
+        // Animation de sortie
+        inactiveTab.style.opacity = '0';
+        inactiveTab.style.transform = 'translateY(10px)';
+
+        setTimeout(() => {
+            inactiveTab.classList.add('hidden');
+            inactiveTab.classList.remove('block');
+            activeTab.classList.remove('hidden');
+            activeTab.classList.add('block');
+
+            // Animation d'entrée
+            activeTab.style.opacity = '0';
+            activeTab.style.transform = 'translateY(10px)';
+
+            setTimeout(() => {
+                activeTab.style.opacity = '1';
+                activeTab.style.transform = 'translateY(0)';
+            }, 50);
+
+        }, 200);
+
+        // Mise à jour des boutons
+        activeBtn.classList.add('active');
+        inactiveBtn.classList.remove('active');
+    }
+
+    btnDashboard.addEventListener('click', () => {
+        if (!btnDashboard.classList.contains('active')) {
+            switchTab(dashboardTab, btnDashboard, metadataTab, btnMetadata);
+        }
+    });
+
+    btnMetadata.addEventListener('click', () => {
+        if (!btnMetadata.classList.contains('active')) {
+            switchTab(metadataTab, btnMetadata, dashboardTab, btnDashboard);
+        }
+    });
+
+    // Initialisation des transitions
+    dashboardTab.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    metadataTab.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+
+    // Redirection en cliquant sur la carte "Documents scrappés"
+document.getElementById('card-scrapped').addEventListener('click', () => {
+    switchTab(metadataTab, btnMetadata, dashboardTab, btnDashboard);
+});
+
+</script>
+
+{% endblock %}

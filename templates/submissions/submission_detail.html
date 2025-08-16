@@ -1,0 +1,235 @@
+{% extends 'submissions/base.html' %}
+
+{% block title %}{{ submission.name }}{% endblock %}
+
+{% block content %}
+<!-- En-tête de la soumission -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2">
+            <i class="fas fa-file-medical text-primary"></i> {{ submission.name }}
+        </h1>
+        <div class="mb-2">
+            <span class="badge bg-info me-2">{{ submission.get_region_display }}</span>
+            <span class="badge bg-secondary me-2">{{ submission.get_variation_type_display }}</span>
+            <span class="badge 
+                {% if submission.status == 'draft' %}bg-secondary
+                {% elif submission.status == 'in_progress' %}bg-warning
+                {% elif submission.status == 'submitted' %}bg-primary
+                {% else %}bg-success
+                {% endif %}">
+                {{ submission.get_status_display }}
+            </span>
+        </div>
+    </div>
+    <div class="text-end">
+        <button class="btn btn-primary" onclick="generateStructure()">
+            <i class="fas fa-magic"></i> Générer Structure CTD Intelligente
+        </button>
+    </div>
+</div>
+
+<!-- Suggestions IA -->
+{% if suggestions %}
+<div class="suggestions-panel">
+    <h5><i class="fas fa-lightbulb"></i> Suggestions IA pour votre Soumission</h5>
+    <ul class="list-unstyled mb-3">
+        {% for suggestion in suggestions %}
+        <li class="mb-2">
+            <i class="fas fa-check-circle me-2"></i>{{ suggestion.title }}
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="d-flex gap-2">
+        <button class="btn btn-light btn-sm" onclick="applySuggestions()">
+            <i class="fas fa-check"></i> Appliquer suggestions
+        </button>
+        <button class="btn btn-outline-light btn-sm">
+            Ignorer
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<!-- Structure CTD Générée -->
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0">
+            <i class="fas fa-layer-group"></i> Structure CTD Générée - {{ submission.get_region_display }}
+        </h4>
+    </div>
+    <div class="card-body">
+        {% for module in modules %}
+        <div class="module-section mb-4">
+            <h5 class="text-primary border-bottom pb-2">
+                <i class="fas fa-folder"></i> {{ module.get_module_type_display }}
+                <span class="badge bg-light text-dark ms-2">{{ module.module_type }}</span>
+            </h5>
+            
+            <div class="sections-list">
+                {% for section in module.sections.all %}
+                <div class="section-item d-flex justify-content-between align-items-center">
+                    <div class="section-info">
+                        <h6 class="mb-1">{{ section.section_number }} {{ section.title }}</h6>
+                        {% if section.description %}
+                        <small class="text-muted">{{ section.description }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="action-buttons">
+                        {% if section.is_completed %}
+                        <span class="badge bg-success me-2">
+                            <i class="fas fa-check"></i> Complété
+                        </span>
+                        {% endif %}
+                        
+                        <a href="{% url 'submissions:section_view' submission.pk module.pk section.pk %}" 
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-eye"></i> Voir
+                        </a>
+                        
+                        <a href="{% url 'submissions:section_template' submission.pk module.pk section.pk %}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-file-alt"></i> Template
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">Aucune section disponible pour ce module.</p>
+                {% endfor %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-4">
+            <i class="fas fa-magic fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Structure CTD non générée</h5>
+            <p class="text-muted">Cliquez sur "Générer Structure CTD Intelligente" pour créer automatiquement les modules et sections.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Soumissions Récentes (section en bas comme dans l'image) -->
+<div class="mt-4">
+    <h5>Soumissions Récentes</h5>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="card border-0" style="background: #f8f9fa;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">EU-MAA-001</h6>
+                            <div>
+                                <span class="badge bg-secondary">EU</span>
+                                <span class="badge bg-info">En cours</span>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">Progression</small>
+                            <div><strong>75%</strong></div>
+                            <a href="#" class="btn btn-link btn-sm p-0">
+                                <i class="fas fa-external-link-alt"></i> Ouvrir
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-0" style="background: #f8f9fa;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">FDA-IND-002</h6>
+                            <div>
+                                <span class="badge bg-primary">US</span>
+                                <span class="badge bg-success">Soumis</span>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">Progression</small>
+                            <div><strong>100%</strong></div>
+                            <a href="#" class="btn btn-link btn-sm p-0">
+                                <i class="fas fa-external-link-alt"></i> Ouvrir
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-0" style="background: #f8f9fa;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">HC-NOC-003</h6>
+                            <div>
+                                <span class="badge bg-danger">CA</span>
+                                <span class="badge bg-warning">Draft</span>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">Progression</small>
+                            <div><strong>45%</strong></div>
+                            <a href="#" class="btn btn-link btn-sm p-0">
+                                <i class="fas fa-external-link-alt"></i> Ouvrir
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function generateStructure() {
+    if (confirm('Voulez-vous regénérer la structure CTD ? Cela peut écraser les modifications existantes.')) {
+        fetch(`{% url 'submissions:generate_structure' submission.pk %}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Erreur lors de la génération de la structure.');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors de la génération de la structure.');
+        });
+    }
+}
+
+function applySuggestions() {
+    fetch(`{% url 'submissions:apply_suggestions' submission.pk %}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erreur: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de l\'application des suggestions.');
+    });
+}
+</script>
+{% endblock %}

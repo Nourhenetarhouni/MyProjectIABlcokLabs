@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% load rawdocs_extras %}
+
+{% block title %}Mes documents – RawDocs{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --primary: #0ea5e9;
+    --primary-light: #38bdf8;
+    --primary-dark: #0284c7;
+    --accent: #10b981;
+    --accent-light: #34d399;
+    --warning: #f59e0b;
+    --error: #dc2626;
+    --text: #000000;
+    --text-muted: #6b7280;
+    --text-secondary: #4b5563;
+    --card-bg: rgba(255,255,255,0.09);
+    --card-border: rgba(14,165,233,0.15);
+    --hover-bg: rgba(255,255,255,0.13);
+}
+
+.dashboard-container {
+    max-width: 1200px;
+    margin: 2rem auto 0;
+    padding: 0 1.5rem;
+}
+.card {
+    background: var(--card-bg);
+    backdrop-filter: blur(14px);
+    border: 1.7px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: box-shadow 0.3s;
+    box-shadow: 0 2px 8px rgba(14,165,233,0.04);
+}
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.97rem;
+    transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    gap: 0.6rem;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    box-shadow: 0 4px 12px rgba(14,165,233,0.16);
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--accent), var(--primary-light));
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(16,185,129,0.12);
+}
+.btn-glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--card-border);
+    color: var(--primary-dark);
+    border-radius: 8px;
+    font-size: 1.05rem;
+    transition: all 0.2s;
+    padding: 0.5rem 0.9rem;
+}
+.btn-glass:hover {
+    background: var(--hover-bg);
+    color: var(--primary);
+    border-color: var(--primary-light);
+    transform: scale(1.08);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.99rem;
+}
+.table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    border-bottom: 1.5px solid rgba(14,165,233,0.07);
+    text-transform: uppercase;
+    font-size: 0.87rem;
+    letter-spacing: .04em;
+}
+.table td {
+    padding: 0.82rem 1rem;
+    color: var(--text);
+    border-bottom: 1px solid rgba(14,165,233,0.04);
+}
+.table tr:hover td {
+    background: var(--hover-bg);
+}
+.table .filename {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-weight: 500;
+}
+.table .fa-file-pdf {
+    color: #e11d48;
+    font-size: 1.25rem;
+}
+.table-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 1.05rem;
+    border-radius: 999px;
+    font-size: 0.89rem;
+    font-weight: 600;
+    letter-spacing: .01em;
+    border: 1px solid transparent;
+    user-select: none;
+}
+.badge.validated {
+    background: rgba(16,185,129,0.12);
+    color: #10b981;
+    border-color: rgba(16,185,129,0.24);
+}
+.badge.pending {
+    background: rgba(245,158,11,0.11);
+    color: #f59e0b;
+    border-color: rgba(245,158,11,0.24);
+}
+.badge.refused {
+    background: rgba(220,38,38,0.12);
+    color: #dc2626;
+    border-color: rgba(220,38,38,0.18);
+}
+.badge.correction {
+    background: rgba(56,189,248,0.09);
+    color: #0ea5e9;
+    border-color: rgba(14,165,233,0.20);
+}
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 1.15rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-muted);
+    width: 2.3rem;
+    height: 2.3rem;
+    transition: all 0.18s;
+    cursor: pointer;
+    text-decoration: none;
+}
+.action-btn.view { color: var(--primary-dark); }
+.action-btn.view:hover { color: var(--primary); border-color: var(--primary-light); background: var(--hover-bg);}
+.action-btn.delete { color: #e11d48;}
+.action-btn.delete:hover { background: rgba(220,38,38,0.09); color: #fff; border-color: #e11d48;}
+.action-btn.validate { color: var(--accent);}
+.action-btn.validate:hover { background: rgba(16,185,129,0.09); color: #fff; border-color: var(--accent);}
+@media (max-width: 900px) {
+    .dashboard-container { padding: 0.5rem;}
+    .card { padding: 1rem;}
+    .table th, .table td { padding: 0.5rem;}
+}
+@media (max-width: 600px) {
+    .table-actions { flex-direction: column; gap: 0.25rem; }
+    .table .filename { font-size: 0.93rem;}
+}
+</style>
+
+<div class="dashboard-container">
+    <div class="card">
+        <h2 class="card-title">
+            <i class="fas fa-folder-open"></i>
+            Documents importés
+        </h2>
+
+        {% if documents %}
+            <div class="overflow-x-auto" style="overflow-x:auto;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fichier</th>
+                            <th>Date d'import</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documents %}
+                        <tr>
+                            <td>
+                                <div class="filename">
+                                    <i class="fas fa-file-pdf"></i>
+                                    {{ doc.file.name|basename }}
+                                </div>
+                            </td>
+                            <td>{{ doc.created_at|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if doc.is_refused %}
+                                    <span class="badge refused">
+                                        <i class="fas fa-times-circle"></i> Refusé
+                                    </span>
+                                {% elif doc.requires_correction %}
+                                    <span class="badge correction">
+                                        <i class="fas fa-bell"></i> Correction requise
+                                    </span>
+                                {% elif doc.is_validated %}
+                                    <span class="badge validated">
+                                        <i class="fas fa-check-circle"></i> Validé
+                                    </span>
+                                {% else %}
+                                    <span class="badge pending">
+                                        <i class="fas fa-clock"></i> En attente
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="{% url 'rawdocs:edit_metadata' doc.id %}"
+                                       class="action-btn view"
+                                       aria-label="Voir ou éditer les métadonnées"
+                                       title="Voir / éditer les métadonnées">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form method="post"
+                                          action="{% url 'rawdocs:document_delete' doc.id %}"
+                                          class="inline" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                                class="action-btn delete"
+                                                aria-label="Supprimer"
+                                                title="Supprimer"
+                                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce document ?');">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% if not doc.is_validated and not doc.is_refused %}
+                                    <a href="{% url 'rawdocs:validate_document' doc.id %}"
+                                       class="action-btn validate"
+                                       aria-label="Valider pour annotation"
+                                       title="Valider pour annotation">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="text-align:center; color:var(--text-muted); padding:2rem 0;">
+                <i class="fas fa-inbox" style="font-size:2.2rem; opacity:0.4"></i>
+                <p style="margin-top:1rem; font-weight:500;">Aucun document importé pour le moment.</p>
+                <p style="font-size:0.92rem; color:var(--text-secondary);">Commencez par importer vos premiers PDF</p>
+            </div>
+        {% endif %}
+
+        <div class="mt-6" style="margin-top:2rem;">
+            <a href="{% url 'rawdocs:upload' %}"
+               class="btn btn-primary">
+                <i class="fas fa-upload"></i> Importer un nouveau PDF
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

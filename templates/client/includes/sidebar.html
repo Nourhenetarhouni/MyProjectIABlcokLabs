@@ -1,0 +1,63 @@
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h2>RegX</h2>
+    </div>
+    
+    <nav class="sidebar-nav">
+        <a href="{% url 'client:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="material-icons">home</i>
+            <span>HOME</span>
+        </a>
+
+        <a href="/client/library/" class="nav-item {% if 'library' in request.resolver_match.namespace %}active{% endif %}">
+            <i class="material-icons">library_books</i>
+            <span>LIBRARY</span>
+        </a>
+
+        <a href="{% url 'submissions:list' %}" class="nav-item {% if 'submissions' in request.resolver_match.namespace %}active{% endif %}">
+            <i class="material-icons">assignment</i>
+            <span>SUBMISSIONS</span>
+        </a>
+
+        <a href="/client/products/" class="nav-item {% if 'products' in request.resolver_match.namespace %}active{% endif %}">
+            <i class="material-icons">inventory</i>
+            <span>PRODUCTS</span>
+        </a>
+
+        <a href="/client/reports/" class="nav-item {% if 'reports' in request.resolver_match.namespace %}active{% endif %}">
+            <i class="material-icons">assessment</i>
+            <span>REPORTING</span>
+        </a>
+    </nav>
+    
+   <div class="sidebar-footer">
+    <div class="user-info">
+        <div class="user-avatar">
+            {{ request.user.get_full_name|default:request.user.username|first|upper }}
+        </div>
+        <div class="user-details">
+            <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+            <span class="user-role">
+                {% if request.user.userprofile.role == 'client' %}
+                    Client
+                {% elif request.user.userprofile.role == 'metadonneur' %}
+                    Métadonneur
+                {% elif request.user.userprofile.role == 'expert' %}
+                    Expert
+                {% elif request.user.userprofile.role == 'annotateur' %}
+                    Annotateur
+                {% else %}
+                    Utilisateur
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    <form method="post" action="{% url 'rawdocs:logout' %}" class="logout-form">
+        {% csrf_token %}
+        <button type="submit" class="btn-logout">
+            <i class="material-icons">logout</i>
+            <span>Déconnexion</span>
+        </button>
+    </form>
+</div>
+</div>

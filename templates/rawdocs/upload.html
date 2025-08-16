@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+{% block title %}Importer un PDF – RawDocs{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --primary: #0f172a;          /* Bleu nuit profond */
+    --primary-light: #2563eb;    /* Bleu principal */
+    --primary-hover: #1e293b;    /* Bleu nuit */
+    --accent: #3b82f6;           /* Bleu pharma vif */
+    --accent-light: #60a5fa;
+    --text: #f8fafc;             /* Presque blanc */
+    --text-secondary: #e2e8f0;
+    --card-bg: rgba(15, 23, 42, 0.80);
+    --card-border: rgba(59, 130, 246, 0.20);
+    --shadow: 0 8px 32px rgba(31, 72, 164, 0.12);
+  }
+
+  .upload-container {
+    max-width: 700px;
+    margin: 2.5rem auto 0;
+    padding: 1.5rem;
+  }
+
+  /* Upload Form */
+  .upload-form {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--shadow);
+    border-radius: 20px;
+    padding: 2.2rem 2rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(10px);
+    transition: box-shadow 0.3s;
+  }
+
+  .upload-form:hover {
+    box-shadow: 0 16px 40px 0 rgba(31, 72, 164, 0.17);
+  }
+
+  .upload-title {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    letter-spacing: 0.01em;
+  }
+
+  label {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+    display: block;
+    letter-spacing: 0.01em;
+  }
+
+  .form-group {
+    margin-bottom: 1.7rem;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.85rem 1.25rem;
+    background: rgba(255,255,255,0.10);
+    border: 1.5px solid rgba(59,130,246,0.13);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 1.07rem;
+    font-weight: 500;
+    transition: border 0.25s, box-shadow 0.25s;
+    backdrop-filter: blur(3px);
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-light);
+    background: rgba(255,255,255,0.16);
+  }
+
+  .form-input::placeholder {
+    color: rgba(226,232,240,0.65);
+    font-weight: 400;
+  }
+
+  .form-separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1.5rem 0;
+    color: var(--text-secondary);
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    font-size: 0.95rem;
+  }
+  .form-separator::before,
+  .form-separator::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid rgba(96,165,250,0.20);
+  }
+  .form-separator::before { margin-right: 1rem; }
+  .form-separator::after  { margin-left: 1rem; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.8rem 1.7rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.18s, color 0.2s, box-shadow 0.2s;
+  }
+  .btn-primary {
+    background: linear-gradient(95deg, var(--accent), var(--primary-light));
+    color: #fff;
+    border: none;
+    box-shadow: 0 6px 16px 0 rgba(56,189,248,0.09);
+  }
+  .btn-primary:hover {
+    background: linear-gradient(90deg, var(--primary-light) 60%, var(--accent));
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 12px 32px 0 rgba(56,189,248,0.18);
+  }
+  .btn-outline {
+    background: transparent;
+    color: var(--accent);
+    border: 1.5px solid var(--accent-light);
+    padding: 0.55rem 1.15rem;
+    font-weight: 600;
+    font-size: 0.97rem;
+    border-radius: 8px;
+    transition: background 0.18s, color 0.2s;
+    text-decoration: none;
+  }
+  .btn-outline:hover {
+    background: var(--accent-light);
+    color: #fff;
+    box-shadow: 0 6px 24px 0 rgba(56,189,248,0.13);
+    transform: translateY(-1px) scale(1.04);
+  }
+
+  /* Cards (metadata/text) */
+  .metadata-card,
+  .text-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 18px;
+    padding: 1.5rem 1.3rem;
+    margin-bottom: 2.5rem;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(8px);
+    transition: box-shadow 0.3s;
+  }
+  .metadata-card:hover,
+  .text-card:hover {
+    box-shadow: 0 16px 40px 0 rgba(31,72,164,0.16);
+  }
+  .card-title {
+    font-size: 1.18rem;
+    font-weight: 600;
+    color: var(--accent-light);
+    margin-bottom: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    letter-spacing: 0.01em;
+  }
+
+  /* Table for Metadata */
+  .metadata-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+  }
+  .metadata-table th,
+  .metadata-table td {
+    padding: 0.67rem 0.7rem;
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+  }
+  .metadata-table th {
+    color: var(--accent-light);
+    text-align: left;
+    font-weight: 600;
+    width: 30%;
+    letter-spacing: 0.01em;
+  }
+  .metadata-table td {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .source-link {
+    color: var(--accent-light);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    word-break: break-all;
+    transition: color 0.2s;
+  }
+  .source-link:hover {
+    color: #fff;
+    text-decoration: underline;
+  }
+
+  /* Extracted Text - Enhanced for PDF-like appearance */
+  .text-content {
+    max-height: 38vh;
+    overflow: auto;
+    background: rgba(31,41,55,0.60);
+    padding: 1.8rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    font-size: 1.05rem;
+    color: var(--text);
+    line-height: 1.8;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .text-content pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1.05rem;
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+  }
+
+  /* Enhanced paragraph spacing for PDF-like structure */
+  .text-content p,
+  .text-content div {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    text-justify: inter-word;
+  }
+
+  /* Better spacing for sections */
+  .text-content pre {
+    /* Convert line breaks to proper paragraphs visually */
+    background-image: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(59, 130, 246, 0.05) 1px,
+      transparent 1px
+    );
+    background-size: 2rem 1rem;
+    background-position: 0 0;
+  }
+
+  /* Add visual separation for sections */
+  .text-content::before {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(to right, 
+      transparent, 
+      rgba(59, 130, 246, 0.3), 
+      transparent
+    );
+    margin-bottom: 1rem;
+  }
+
+  /* PDF-like text styling with better readability */
+  .text-content {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    hyphens: auto;
+    word-spacing: 0.05em;
+  }
+
+  /* Responsive */
+  @media (max-width: 820px) {
+    .upload-container { padding: 0.7rem; }
+    .upload-form, .metadata-card, .text-card { padding: 1rem; }
+    .form-group { margin-bottom: 1.1rem; }
+  }
+  @media (max-width: 500px) {
+    .upload-title, .card-title { font-size: 1rem; }
+    .btn, .btn-primary { font-size: 0.93rem; padding: 0.67rem 1.1rem; }
+    .form-group { margin-bottom: 0.6rem; }
+  }
+</style>
+
+<div class="upload-container">
+  <!-- Upload Form -->
+  <form method="post" enctype="multipart/form-data" class="upload-form" novalidate>
+    {% csrf_token %}
+    <h2 class="upload-title">
+      <i class="fas fa-upload"></i> Importer un document
+    </h2>
+
+    <div class="form-group">
+      <label for="pdf_url">Depuis une URL de PDF :</label>
+      <input
+        type="url"
+        name="pdf_url"
+        id="pdf_url"
+        placeholder="Collez l'URL du PDF à importer"
+        value="{{ form.pdf_url.value|default_if_none:'' }}"
+        class="form-input"
+      />
+    </div>
+
+    <div class="form-separator">OU</div>
+
+    <div class="form-group">
+      <label for="pdf_file">Depuis un fichier local :</label>
+      <input
+        type="file"
+        name="pdf_file"
+        id="pdf_file"
+        accept="application/pdf"
+        class="form-input"
+      />
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+      <i class="fas fa-upload"></i> Extraire
+    </button>
+  </form>
+
+  <!-- Metadata Table -->
+  {% if metadata %}
+  <div class="metadata-card">
+    <h3 class="card-title">
+      <i class="fas fa-info-circle"></i> Métadonnées extraites
+    </h3>
+    <table class="metadata-table">
+      <tbody>
+        <tr><th>Titre</th><td>{{ metadata.title|default:"Non spécifié" }}</td></tr>
+        <tr><th>Type de document</th><td>{{ metadata.type|default:"–" }}</td></tr>
+        <tr><th>Langue</th><td>{{ metadata.language|default:"–" }}</td></tr>
+        <tr><th>Version</th><td>{{ metadata.version|default:"–" }}</td></tr>
+        <tr>
+          <th>URL Source</th>
+          <td>
+            {% if metadata.url_source %}
+            <a href="{{ metadata.url_source }}" target="_blank" class="source-link">
+              <i class="fas fa-external-link-alt"></i>
+              {{ metadata.url_source|truncatechars:40 }}
+            </a>
+            {% else %}
+              –
+            {% endif %}
+          </td>
+        </tr>
+        <tr><th>Source interne</th><td>{{ metadata.source|default:"Non spécifiée" }}</td></tr>
+        <tr><th>Date de publication</th><td>{{ metadata.publication_date|default:"Non spécifiée" }}</td></tr>
+        <tr>
+          <th>Contexte</th>
+          <td>
+            <div class="text-content" style="max-height: 120px;">
+              {{ metadata.context|default:"Aucun contexte fourni" }}
+            </div>
+          </td>
+        </tr>
+        <tr><th>Pays</th><td>{{ metadata.country|default:"–" }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Extracted Text -->
+  {% if extracted_text %}
+  <div class="text-card">
+    <h3 class="card-title">
+      <i class="fas fa-file-alt"></i> Texte complet extrait
+    </h3>
+    <div class="text-content">
+      <pre>{{ extracted_text }}</pre>
+    </div>
+    <a href="{% url 'rawdocs:upload' %}" class="btn-outline">
+      <i class="fas fa-arrow-left"></i> Nouvel upload
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Link to Document List -->
+  <div style="text-align: center; margin-top: 2rem;">
+    <a href="{% url 'rawdocs:document_list' %}#metadata-tab" class="btn-outline">
+      <i class="fas fa-list"></i> Voir tous les documents
+    </a>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (location.hash === '#metadata-tab') {
+      window.scrollTo(0, 0);
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,1636 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load rawdocs_extras %}
+
+{% block title %}Révision Expert - {{ document.file.name }}{% endblock %}
+
+{% block content %}
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+<style>
+/* Expert Review Styles - Based on annotate_document.html */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --pharma-primary: #0ea5e9;
+  --pharma-primary-dark: #0284c7;
+  --pharma-primary-light: #38bdf8;
+  --pharma-accent: #10b981;
+  --pharma-accent-light: #34d399;
+  --pharma-success: #059669;
+  --pharma-warn: #f59e0b;
+  --pharma-error: #dc2626;
+  --pharma-text: #1f2937;
+  --pharma-text-soft: #6b7280;
+  --pharma-bg: #f8fafc;
+  --pharma-card: #ffffff;
+  --pharma-border: #e2e8f0;
+  --pharma-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --pharma-radius: 16px;
+  --pharma-radius-sm: 12px;
+  --pharma-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+
+body {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  min-height: 100vh;
+  color: var(--pharma-text);
+}
+
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Card base styling */
+.card {
+  background: var(--pharma-card);
+  border-radius: var(--pharma-radius);
+  box-shadow: var(--pharma-shadow);
+  border: 1px solid var(--pharma-border);
+  transition: var(--pharma-transition);
+  margin-bottom: 2rem;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Header section */
+.annotation-header {
+  background: linear-gradient(135deg, var(--pharma-primary), var(--pharma-accent));
+  color: white;
+  padding: 2rem;
+  border-radius: var(--pharma-radius) var(--pharma-radius) 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.header-info h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.document-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  opacity: 0.9;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btn-outline {
+  padding: 0.6rem 1.2rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: var(--pharma-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+/* Annotation types panel */
+.annotation-types-panel {
+  background: var(--pharma-card);
+  padding: 2rem;
+  border-bottom: 1px solid var(--pharma-border);
+}
+
+.annotation-types-panel h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--pharma-text);
+  margin: 0 0 0.5rem 0;
+}
+
+.instructions {
+  color: var(--pharma-text-soft);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+.annotation-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.annotation-type-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid;
+  background: transparent;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--pharma-transition);
+}
+
+.annotation-type-btn:hover,
+.annotation-type-btn.active {
+  background: currentColor;
+  color: white !important;
+  transform: translateY(-1px);
+}
+
+.annotation-type-btn-add {
+  padding: 0.5rem 1rem;
+  border: 2px dashed var(--pharma-accent);
+  background: transparent;
+  color: var(--pharma-accent);
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--pharma-transition);
+}
+
+.annotation-type-btn-add:hover {
+  background: var(--pharma-accent);
+  color: white;
+  border-style: solid;
+}
+
+.annotation-mode {
+  background: rgba(14, 165, 233, 0.1);
+  padding: 1rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.mode-label {
+  font-weight: 600;
+  color: var(--pharma-primary);
+}
+
+.current-mode {
+  background: var(--pharma-primary);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.help-text {
+  color: var(--pharma-text-soft);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Custom Modal Styles */
+.custom-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-modal.show {
+  display: flex;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content-custom {
+  background: white;
+  border-radius: var(--pharma-radius);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 500px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.modal-header-custom {
+  background: linear-gradient(135deg, var(--pharma-primary), var(--pharma-accent));
+  color: white;
+  padding: 1.5rem 2rem;
+  border-radius: var(--pharma-radius) var(--pharma-radius) 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header-custom h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: var(--pharma-transition);
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-body-custom {
+  padding: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--pharma-text);
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--pharma-border);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: var(--pharma-transition);
+  box-sizing: border-box;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--pharma-primary);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.form-control:read-only {
+  background: var(--pharma-bg);
+  color: var(--pharma-text-soft);
+}
+
+.modal-footer-custom {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--pharma-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.btn-secondary {
+  padding: 0.6rem 1.2rem;
+  background: var(--pharma-text-soft);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--pharma-transition);
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  padding: 0.6rem 1.2rem;
+  background: var(--pharma-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--pharma-transition);
+}
+
+.btn-primary:hover {
+  background: var(--pharma-primary-dark);
+  transform: translateY(-1px);
+}
+
+/* Page navigation */
+.page-navigation {
+  background: var(--pharma-card);
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--pharma-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-btn {
+  padding: 0.5rem 1rem;
+  background: var(--pharma-primary);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: var(--pharma-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-btn:hover {
+  background: var(--pharma-primary-dark);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.page-selector select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--pharma-border);
+  border-radius: 8px;
+  background: white;
+  font-weight: 500;
+}
+
+.expert-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btn-validate, .btn-reject {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--pharma-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-validate {
+  background: var(--pharma-success);
+  color: white;
+}
+
+.btn-validate:hover {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+.btn-reject {
+  background: var(--pharma-error);
+  color: white;
+}
+
+.btn-reject:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+/* Text content */
+.text-content-card {
+  background: var(--pharma-card);
+  padding: 2rem;
+  border-bottom: 1px solid var(--pharma-border);
+}
+
+.text-content-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--pharma-text);
+  margin: 0 0 1.5rem 0;
+}
+
+.page-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.page-status.validated-human {
+  background: rgba(5, 150, 105, 0.1);
+  color: var(--pharma-success);
+}
+
+.page-status.annotated {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--pharma-warn);
+}
+
+.page-status.pending {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--pharma-text-soft);
+}
+
+.text-content {
+  background: #fafbfc;
+  border: 1px solid var(--pharma-border);
+  border-radius: 10px;
+  padding: 2rem;
+  line-height: 1.8;
+  font-size: 1.05rem;
+  color: var(--pharma-text);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  min-height: 300px;
+  cursor: text;
+  font-family: 'Inter', 'Georgia', 'Times New Roman', serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  hyphens: auto;
+  text-align: justify;
+  text-justify: inter-word;
+  letter-spacing: 0.01em;
+  word-spacing: 0.05em;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Annotations list */
+.annotations-list {
+  background: var(--pharma-card);
+  padding: 2rem;
+  border-radius: 0 0 var(--pharma-radius) var(--pharma-radius);
+}
+
+.annotations-list h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--pharma-text);
+  margin: 0 0 1.5rem 0;
+}
+
+.annotation-item {
+  background: #fafbfc;
+  border: 1px solid var(--pharma-border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: var(--pharma-transition);
+}
+
+.annotation-item:hover {
+  border-color: var(--pharma-primary-light);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
+}
+
+.annotation-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.annotation-type {
+  background: linear-gradient(90deg, var(--pharma-primary), var(--pharma-accent) 90%);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.24rem 0.8rem;
+}
+
+.annotation-confidence {
+  background: #bae6fd;
+  color: var(--pharma-primary-dark);
+  border-radius: 9px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.19rem 0.6rem;
+}
+
+.validation-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.validate-annotation {
+  background: var(--pharma-success);
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--pharma-transition);
+}
+
+.validate-annotation:hover {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+.reject-annotation {
+  background: var(--pharma-error);
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--pharma-transition);
+}
+
+.reject-annotation:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.annotation-text {
+  font-style: italic;
+  color: var(--pharma-primary-dark);
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+  cursor: pointer;
+}
+
+.annotation-text:hover {
+  text-decoration: underline;
+}
+
+.annotation-reasoning {
+  font-size: 0.9rem;
+  color: var(--pharma-accent);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Context menu */
+.context-menu {
+  position: absolute;
+  background: white;
+  border: 1px solid var(--pharma-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 180px;
+}
+
+.context-menu.hidden {
+  display: none;
+}
+
+.context-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--pharma-transition);
+  color: var(--pharma-text);
+}
+
+.context-menu-item:hover {
+  background: var(--pharma-bg);
+}
+
+.context-menu-item.danger {
+  color: var(--pharma-error);
+}
+
+.context-menu-item.danger:hover {
+  background: rgba(220, 38, 38, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .main-content { max-width: 99vw; }
+  .annotation-header, .text-content-card, .annotations-list, .annotation-types-panel, .page-navigation {
+    padding: 1.1rem 0.8rem !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .annotation-header, .annotation-types-panel, .page-navigation, .text-content-card, .annotations-list {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+  .header-actions { width: 100%; }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px);}
+  to   { opacity: 1; transform: translateY(0);}
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes highlight-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+  50% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+}
+</style>
+
+<div class="main-content">
+  <!-- Annotation Header -->
+  <section class="card">
+    <div class="annotation-header">
+      <div class="header-info">
+        <h2><i class="fas fa-file-pdf"></i> {{ document.file.name|basename }}</h2>
+        <div class="document-meta">
+          <span class="meta-item">
+            <i class="fas fa-user"></i>
+            Annotateur: {{ document.owner.username }}
+          </span>
+          <span class="meta-item">
+            <i class="fas fa-file-alt"></i>
+            Page {{ current_page.page_number }} / {{ total_pages }}
+          </span>
+          <span class="meta-item">
+            <i class="fas fa-calendar"></i>
+            {{ document.expert_ready_at|date:"d/m/Y" }}
+          </span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-outline" onclick="viewOriginalDocument({{ document.id }})">
+          <i class="fas fa-eye"></i> Voir Document Original
+        </button>
+        <a href="{% url 'expert:dashboard' %}" class="btn-outline">
+          <i class="fas fa-arrow-left"></i> Retour au Dashboard
+        </a>
+      </div>
+    </div>
+
+    <!-- Annotation Types Panel -->
+    <div class="annotation-types-panel">
+      <h3>Types d'annotation disponibles</h3>
+      <p class="instructions">Cliquez sur un type, puis surlignez le texte correspondant pour créer une annotation</p>
+
+      <div class="annotation-types">
+        {% for ann_type in annotation_types %}
+        <button class="annotation-type-btn"
+                data-type="{{ ann_type.name }}"
+                data-color="{{ ann_type.color }}"
+                style="border-color: {{ ann_type.color }}; color: {{ ann_type.color }};">
+          {{ ann_type.display_name }}
+        </button>
+        {% endfor %}
+        <button class="annotation-type-btn-add" onclick="showAddAnnotationTypeModal()" type="button">
+          <i class="fas fa-plus"></i> Ajouter Type
+        </button>
+      </div>
+
+      <div class="annotation-mode">
+        <span class="mode-label">
+          <i class="fas fa-hand-pointer"></i>
+          Mode annotation activé:
+        </span>
+        <span id="current-mode" class="current-mode">Aucun type sélectionné</span>
+      </div>
+
+      <p class="help-text">Surlignez du texte pour créer une annotation automatiquement</p>
+    </div>
+
+    <!-- Page Navigation -->
+    <div class="page-navigation">
+      <div class="page-controls">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}" class="nav-btn">
+            <i class="fas fa-chevron-left"></i> Page Précédente
+          </a>
+        {% endif %}
+
+        <div class="page-selector">
+          <select id="page-select" onchange="goToPage(this.value)">
+            {% for i in page_obj.paginator.page_range %}
+            <option value="{{ i }}" {% if i == page_obj.number %}selected{% endif %}>
+              Page {{ i }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}" class="nav-btn">
+            Page Suivante <i class="fas fa-chevron-right"></i>
+          </a>
+        {% endif %}
+      </div>
+
+      <div class="expert-controls">
+        <!-- Validation du document complet -->
+        <form method="POST" action="{% url 'expert:validate_document' document.id %}" style="display: inline;" onsubmit="return handleValidation(event)">
+          {% csrf_token %}
+          <button type="submit" class="btn-validate">
+            <i class="fas fa-check-circle"></i> Valider Document
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Main Text Content -->
+    <div class="text-content-card">
+      <h3>
+        <i class="fas fa-file-text"></i>
+        Page {{ current_page.page_number }}
+        {% if current_page.is_validated_by_human %}
+          <span class="page-status validated-human">Validée par humain</span>
+        {% elif current_page.is_annotated %}
+          <span class="page-status annotated">Annotée</span>
+        {% else %}
+          <span class="page-status pending">En attente</span>
+        {% endif %}
+      </h3>
+
+      <div id="text-content" class="text-content" data-page-id="{{ current_page.id }}">
+        {{ current_page.cleaned_text }}
+      </div>
+    </div>
+
+    <!-- Annotations List -->
+    <div class="annotations-list">
+      <h3><i class="fas fa-tags"></i> Annotations ({{ existing_annotations.count }})</h3>
+
+      <div id="annotations-container">
+        {% for annotation in existing_annotations %}
+        <div class="annotation-item" data-annotation-id="{{ annotation.id }}">
+          <div class="annotation-header">
+            <span class="annotation-type" style="background: {{ annotation.annotation_type.color }}">
+              {{ annotation.annotation_type.display_name }}
+            </span>
+            <span class="annotation-confidence">{{ annotation.confidence_score|floatformat:0 }}%</span>
+            
+            <!-- Validation Status Badge -->
+            {% if annotation.validation_status == 'validated' %}
+              <span class="badge bg-success">✓ Validé</span>
+            {% elif annotation.validation_status == 'rejected' %}
+              <span class="badge bg-danger">✗ Rejeté</span>
+            {% elif annotation.validation_status == 'expert_created' %}
+              <span class="badge bg-primary">★ Expert</span>
+            {% else %}
+              <span class="badge bg-warning">⏳ En attente</span>
+            {% endif %}
+
+            <div class="validation-actions">
+              {% if annotation.validation_status == 'pending' %}
+                <button class="validate-annotation" onclick="validateAnnotation({{ annotation.id }})">
+                  <i class="fas fa-check"></i> Valider
+                </button>
+                <button class="reject-annotation" onclick="rejectAnnotation({{ annotation.id }})">
+                  <i class="fas fa-times"></i> Rejeter
+                </button>
+              {% elif annotation.validation_status == 'validated' %}
+                <button class="reject-annotation" onclick="rejectAnnotation({{ annotation.id }})">
+                  <i class="fas fa-times"></i> Rejeter
+                </button>
+              {% elif annotation.validation_status == 'rejected' %}
+                <button class="validate-annotation" onclick="validateAnnotation({{ annotation.id }})">
+                  <i class="fas fa-check"></i> Valider
+                </button>
+              {% elif annotation.validation_status == 'expert_created' %}
+                <!-- NEW: Allow experts to reject their own annotations -->
+                <button class="reject-annotation" onclick="rejectAnnotation({{ annotation.id }})">
+                  <i class="fas fa-times"></i> Rejeter
+                </button>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="annotation-text"
+            onclick="highlightTextInDocument('{{ annotation.selected_text|escapejs }}', {{ annotation.start_pos }}, {{ annotation.end_pos }})"
+            title="Cliquez pour voir dans le texte">"{{ annotation.selected_text }}"</div>
+
+          {% if annotation.ai_reasoning %}
+          <div class="annotation-reasoning">
+            <i class="fas fa-lightbulb"></i> {{ annotation.ai_reasoning }}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Context Menu -->
+<div id="context-menu" class="context-menu hidden">
+  <button class="context-menu-item danger" onclick="deleteAnnotationTypeFromMenu()">
+    <i class="fas fa-trash"></i> Supprimer Type d'Annotation
+  </button>
+  <button class="context-menu-item" onclick="hideContextMenu()">
+    <i class="fas fa-times"></i> Annuler
+  </button>
+</div>
+
+<!-- Custom Modal for adding new annotation types -->
+<div id="addAnnotationTypeModal" class="custom-modal">
+  <div class="modal-content-custom">
+    <div class="modal-header-custom">
+      <h3><i class="fas fa-plus-circle"></i> Ajouter un nouveau type d'annotation</h3>
+      <button class="modal-close" onclick="hideAddAnnotationTypeModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body-custom">
+      <div class="form-group">
+        <label for="new-annotation-display-name" class="form-label">
+          <i class="fas fa-tag"></i> Nom d'affichage
+        </label>
+        <input type="text" class="form-control" id="new-annotation-display-name"
+               placeholder="ex: Produit, Dosage, Méthode">
+      </div>
+      <div class="form-group">
+        <label for="new-annotation-name" class="form-label">
+          <i class="fas fa-code"></i> Nom technique (auto-généré)
+        </label>
+        <input type="text" class="form-control" id="new-annotation-name" readonly>
+      </div>
+    </div>
+    <div class="modal-footer-custom">
+      <button type="button" class="btn-secondary" onclick="hideAddAnnotationTypeModal()">
+        <i class="fas fa-times"></i> Annuler
+      </button>
+      <button type="button" class="btn-primary" onclick="createAnnotationType()">
+        <i class="fas fa-plus"></i> Créer le Type
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+// Variables globales
+let selectedAnnotationType = null;
+let selectedColor = null;
+let annotationTypeMap = {};
+
+// Initialize annotation type mapping
+document.addEventListener('DOMContentLoaded', function() {
+    // Build the type mapping
+    {% for ann_type in annotation_types %}
+    annotationTypeMap['{{ ann_type.name|escapejs }}'] = {{ ann_type.id }};
+    {% endfor %}
+
+    console.log('📋 Annotation type mapping loaded:', annotationTypeMap);
+
+    // Initialize annotation type buttons
+    document.querySelectorAll('.annotation-type-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons
+            document.querySelectorAll('.annotation-type-btn').forEach(b => b.classList.remove('active'));
+
+            // Add active class to clicked button
+            this.classList.add('active');
+
+            // Set selected type
+            selectedAnnotationType = this.dataset.type;
+            selectedColor = this.dataset.color;
+
+            // Update current mode display
+            document.getElementById('current-mode').textContent = this.textContent;
+            document.getElementById('current-mode').style.backgroundColor = selectedColor;
+        });
+    });
+
+    // Auto-generate technical name from display name
+    document.getElementById('new-annotation-display-name').addEventListener('input', function() {
+        const displayName = this.value;
+        const technicalName = displayName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        document.getElementById('new-annotation-name').value = technicalName;
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('addAnnotationTypeModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideAddAnnotationTypeModal();
+        }
+    });
+
+    // Handle ESC key to close modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            hideAddAnnotationTypeModal();
+        }
+    });
+});
+
+// Modal functions
+function showAddAnnotationTypeModal() {
+    document.getElementById('new-annotation-display-name').value = '';
+    document.getElementById('new-annotation-name').value = '';
+
+    const modal = document.getElementById('addAnnotationTypeModal');
+    modal.classList.add('show');
+
+    // Focus on the input field
+    setTimeout(() => {
+        document.getElementById('new-annotation-display-name').focus();
+    }, 300);
+}
+
+function hideAddAnnotationTypeModal() {
+    const modal = document.getElementById('addAnnotationTypeModal');
+    modal.classList.remove('show');
+}
+
+// Text selection for manual annotation
+document.getElementById('text-content').addEventListener('mouseup', function() {
+  if (!selectedAnnotationType) {
+    alert('Veuillez d\'abord sélectionner un type d\'annotation');
+    return;
+  }
+
+  const selection = window.getSelection();
+  if (selection.toString().trim().length === 0) return;
+
+  const range = selection.getRangeAt(0);
+  const selectedText = selection.toString().trim();
+
+  // Calculate positions
+  const textContent = this.textContent;
+  const startPos = getTextPosition(this, range.startContainer, range.startOffset);
+  const endPos = startPos + selectedText.length;
+
+  // Save annotation
+  saveManualAnnotation({
+    page_id: this.dataset.pageId,
+    text: selectedText,
+    entity_type: selectedAnnotationType,
+    start_offset: startPos,
+    end_offset: endPos
+  });
+
+  // Clear selection
+  selection.removeAllRanges();
+});
+
+function getTextPosition(container, node, offset) {
+  let position = 0;
+  const walker = document.createTreeWalker(
+    container,
+    NodeFilter.SHOW_TEXT,
+    null,
+    false
+  );
+
+  let currentNode;
+  while (currentNode = walker.nextNode()) {
+    if (currentNode === node) {
+      return position + offset;
+    }
+    position += currentNode.textContent.length;
+  }
+  return position;
+}
+
+function saveManualAnnotation(data) {
+  fetch('{% url "expert:create_annotation" %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload(); // Refresh to show new annotation
+    } else {
+      alert('Erreur: ' + data.error);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Erreur lors de la sauvegarde');
+  });
+}
+
+function validateAnnotation(annotationId) {
+  fetch(`{% url "expert:validate_annotation" 0 %}`.replace('0', annotationId), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({action: 'validate'})
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Erreur: ' + data.error);
+    }
+  });
+}
+
+function rejectAnnotation(annotationId) {
+  fetch(`{% url "expert:validate_annotation" 0 %}`.replace('0', annotationId), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({action: 'reject'})
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Erreur: ' + data.error);
+    }
+  });
+}
+
+function goToPage(pageNumber) {
+  window.location.href = `?page=${pageNumber}`;
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function createAnnotationType() {
+    const displayName = document.getElementById('new-annotation-display-name').value.trim();
+    const name = document.getElementById('new-annotation-name').value.trim();
+
+    if (!displayName) {
+        alert('Veuillez entrer un nom d\'affichage');
+        return;
+    }
+
+    // Show loading state
+    const createBtn = document.querySelector('.btn-primary');
+    const originalText = createBtn.innerHTML;
+    createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Création...';
+    createBtn.disabled = true;
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('{% url "expert:create_annotation_type" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            display_name: displayName,
+            name: name
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Success notification
+            showSuccessNotification('✅ Type d\'annotation créé avec succès!');
+
+            annotationTypeMap[data.annotation_type.name] = data.annotation_type.id;
+
+            // Add new button to the interface
+            addNewAnnotationButton(data.annotation_type);
+
+            // Close modal
+            hideAddAnnotationTypeModal();
+
+            // Clear form
+            document.getElementById('new-annotation-display-name').value = '';
+            document.getElementById('new-annotation-name').value = '';
+        } else {
+            alert('Erreur: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erreur lors de la création du type d\'annotation');
+    })
+    .finally(() => {
+        // Restore button state
+        createBtn.innerHTML = originalText;
+        createBtn.disabled = false;
+    });
+}
+
+function addNewAnnotationButton(annotationType) {
+    const existingButton = document.querySelector(`[data-type="${annotationType.name}"]`);
+    if (existingButton && !existingButton.classList.contains('annotation-type-btn-add')) {
+        return;
+    }
+
+    const newButton = document.createElement('button');
+    newButton.className = 'annotation-type-btn';
+    newButton.setAttribute('data-type', annotationType.name);
+    newButton.setAttribute('data-color', annotationType.color);
+    newButton.style.borderColor = annotationType.color;
+    newButton.style.color = annotationType.color;
+    newButton.textContent = annotationType.display_name;
+
+    newButton.addEventListener('click', function() {
+        document.querySelectorAll('.annotation-type-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        selectedAnnotationType = this.dataset.type;
+        selectedColor = this.dataset.color;
+        document.getElementById('current-mode').textContent = this.textContent;
+        document.getElementById('current-mode').style.backgroundColor = selectedColor;
+    });
+
+    // Add right-click context menu
+    newButton.addEventListener('contextmenu', handleRightClick);
+
+    const container = document.querySelector('.annotation-types');
+    const addButton = document.querySelector('.annotation-type-btn-add');
+    if (container && addButton) {
+        container.insertBefore(newButton, addButton);
+    }
+}
+
+function showSuccessNotification(message) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, var(--pharma-success), var(--pharma-accent));
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        font-weight: 500;
+        animation: slideInFromRight 0.3s ease-out;
+    `;
+    notification.textContent = message;
+
+    // Add animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInFromRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutToRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(notification);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOutToRight 0.3s ease-out';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+            document.head.removeChild(style);
+        }, 300);
+    }, 3000);
+}
+
+function viewOriginalDocument(documentId) {
+    if (!documentId) {
+        alert('Document ID non disponible');
+        return;
+    }
+
+    const documentUrl = `{% url 'expert:view_original_document' 0 %}`.replace('0', documentId);
+    window.open(documentUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+}
+
+function highlightTextInDocument(text, startPos, endPos) {
+    const pageDisplay = document.getElementById('text-content');
+
+    // Store the clean original text content
+    const originalTextContent = pageDisplay.textContent;
+
+    // Remove any existing highlights first
+    clearExistingHighlights();
+
+    try {
+        // Reset to clean text content
+        pageDisplay.textContent = originalTextContent;
+
+        let content = pageDisplay.textContent;
+        let targetText = text.trim();
+
+        let textIndex = -1;
+        let foundText = targetText;
+
+        // BULLETPROOF SEARCH STRATEGIES - Try them all!
+
+        // Strategy 1: Exact match
+        textIndex = content.indexOf(targetText);
+
+        // Strategy 2: Case insensitive
+        if (textIndex === -1) {
+            textIndex = content.toLowerCase().indexOf(targetText.toLowerCase());
+        }
+
+        // Strategy 3: Flexible whitespace (spaces, line breaks, tabs)
+        if (textIndex === -1) {
+            const flexiblePattern = targetText.replace(/\s+/g, '\\s+');
+            const regex = new RegExp(flexiblePattern, 'i');
+            const match = content.match(regex);
+
+            if (match) {
+                textIndex = content.search(regex);
+                foundText = match[0];
+            }
+        }
+
+        // Strategy 4: Remove ALL whitespace and punctuation for comparison
+        if (textIndex === -1) {
+            const cleanTarget = targetText.replace(/[\s\(\)\-\.,;:!?]/g, '').toLowerCase();
+            const cleanContent = content.toLowerCase();
+
+            // Find position by removing chars progressively
+            let bestMatch = '';
+            let bestIndex = -1;
+            let bestLength = 0;
+
+            for (let i = 0; i < content.length - cleanTarget.length + 1; i++) {
+                for (let len = cleanTarget.length; len <= cleanTarget.length + 50; len++) {
+                    if (i + len > content.length) break;
+
+                    const candidate = content.substring(i, i + len);
+                    const cleanCandidate = candidate.replace(/[\s\(\)\-\.,;:!?]/g, '').toLowerCase();
+
+                    if (cleanCandidate === cleanTarget) {
+                        bestMatch = candidate;
+                        bestIndex = i;
+                        bestLength = len;
+                        break;
+                    }
+                }
+                if (bestMatch) break;
+            }
+
+            if (bestMatch) {
+                textIndex = bestIndex;
+                foundText = bestMatch;
+            }
+        }
+
+        // Strategy 5: Word-by-word fuzzy matching
+        if (textIndex === -1) {
+            const targetWords = targetText.toLowerCase().split(/\s+/);
+            const contentLower = content.toLowerCase();
+
+            // Find first word
+            const firstWordIndex = contentLower.indexOf(targetWords[0]);
+            if (firstWordIndex !== -1) {
+                // Try to match subsequent words within a reasonable window
+                let currentPos = firstWordIndex;
+                let matchedText = '';
+                let allWordsFound = true;
+
+                for (let word of targetWords) {
+                    const wordPos = contentLower.indexOf(word, currentPos);
+                    if (wordPos !== -1 && wordPos - currentPos < 100) { // Within 100 chars
+                        if (!matchedText) {
+                            matchedText = content.substring(firstWordIndex, wordPos + word.length);
+                        } else {
+                            matchedText = content.substring(firstWordIndex, wordPos + word.length);
+                        }
+                        currentPos = wordPos + word.length;
+                    } else {
+                        allWordsFound = false;
+                        break;
+                    }
+                }
+
+                if (allWordsFound && matchedText) {
+                    textIndex = firstWordIndex;
+                    foundText = matchedText;
+                }
+            }
+        }
+
+        // Strategy 6: Character-by-character similarity matching
+        if (textIndex === -1) {
+            const targetLower = targetText.toLowerCase().replace(/\s+/g, ' ');
+            let bestSimilarity = 0;
+            let bestIndex = -1;
+            let bestMatch = '';
+
+            // Try different window sizes around the target length
+            const minLen = Math.max(5, targetText.length - 10);
+            const maxLen = targetText.length + 20;
+
+            for (let i = 0; i < content.length - minLen; i++) {
+                for (let len = minLen; len <= maxLen && i + len <= content.length; len++) {
+                    const candidate = content.substring(i, i + len);
+                    const candidateLower = candidate.toLowerCase().replace(/\s+/g, ' ');
+
+                    // Calculate similarity (simple character overlap)
+                    let similarity = 0;
+                    const minLength = Math.min(targetLower.length, candidateLower.length);
+
+                    for (let j = 0; j < minLength; j++) {
+                        if (targetLower[j] === candidateLower[j]) {
+                            similarity++;
+                        }
+                    }
+
+                    const similarityRatio = similarity / Math.max(targetLower.length, candidateLower.length);
+
+                    if (similarityRatio > bestSimilarity && similarityRatio > 0.7) {
+                        bestSimilarity = similarityRatio;
+                        bestIndex = i;
+                        bestMatch = candidate;
+                    }
+                }
+            }
+
+            if (bestIndex !== -1) {
+                textIndex = bestIndex;
+                foundText = bestMatch;
+            }
+        }
+
+        // Strategy 7: Last resort - partial matching
+        if (textIndex === -1) {
+            const words = targetText.split(/\s+/);
+            for (let word of words) {
+                if (word.length > 3) { // Only try meaningful words
+                    const wordIndex = content.toLowerCase().indexOf(word.toLowerCase());
+                    if (wordIndex !== -1) {
+                        // Found at least one significant word
+                        textIndex = wordIndex;
+                        foundText = word;
+                        console.log(`⚠️ Partial match found: "${word}" from "${targetText}"`);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // HIGHLIGHT THE RESULT
+        if (textIndex !== -1) {
+            console.log(`✅ FOUND: "${foundText}" at position ${textIndex}`);
+
+            // Create highlighted version
+            const beforeText = content.substring(0, textIndex);
+            const highlightedText = content.substring(textIndex, textIndex + foundText.length);
+            const afterText = content.substring(textIndex + foundText.length);
+
+            // Replace with highlighted version
+            pageDisplay.innerHTML =
+                beforeText +
+                '<span id="highlighted-annotation" style="background-color: #fff3cd; padding: 2px 4px; border-radius: 3px; border: 2px solid #ffc107; animation: highlight-pulse 2s ease-in-out;">' +
+                highlightedText +
+                '</span>' +
+                afterText;
+
+            // Scroll to the highlighted text
+            document.getElementById('highlighted-annotation').scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+
+            // Clear any existing timeout
+            if (window.highlightTimeout) {
+                clearTimeout(window.highlightTimeout);
+            }
+
+            // Remove highlight after 5 seconds and restore clean text
+            window.highlightTimeout = setTimeout(() => {
+                pageDisplay.textContent = originalTextContent;
+            }, 5000);
+
+        } else {
+            console.log('❌ NO MATCH FOUND with any strategy for:', targetText);
+
+            // Show debug info
+            console.log('Content preview:', content.substring(0, 200) + '...');
+            console.log('Search target:', targetText);
+
+            alert('Texte non trouvé même avec recherche avancée: "' + targetText.substring(0, 50) + (targetText.length > 50 ? '...' : '') + '"');
+        }
+    } catch (error) {
+        console.error('Error highlighting text:', error);
+        pageDisplay.textContent = originalTextContent;
+    }
+}
+
+function clearExistingHighlights() {
+    if (window.highlightTimeout) {
+        clearTimeout(window.highlightTimeout);
+    }
+    
+    const existingHighlight = document.getElementById('highlighted-annotation');
+    if (existingHighlight) {
+        const parent = existingHighlight.parentNode;
+        parent.replaceChild(document.createTextNode(existingHighlight.textContent), existingHighlight);
+        parent.normalize();
+    }
+}
+
+// Handle document validation with automatic success message
+function handleValidation(event) {
+    // Don't prevent the form submission, just add success handling
+    const form = event.target;
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validation en cours...';
+    submitBtn.disabled = true;
+    
+    // Let the form submit normally, success message will be handled by Django messages
+    return true;
+}
+
+// Check for success messages and show automatic popup
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if there are any success messages from Django
+    const messages = document.querySelectorAll('.alert-success, .messages .success');
+    if (messages.length > 0) {
+        messages.forEach(function(message) {
+            // Show success popup with the message content
+            setTimeout(() => {
+                showSuccessNotification('✅ ' + message.textContent.trim());
+            }, 500);
+        });
+    }
+});
+
+// Context menu functionality (for consistency with annotate_document.html)
+let contextMenuTarget = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    function addContextMenuToButtons() {
+        document.querySelectorAll('.annotation-type-btn').forEach(btn => {
+            btn.removeEventListener('contextmenu', handleRightClick);
+            btn.addEventListener('contextmenu', handleRightClick);
+        });
+    }
+    
+    addContextMenuToButtons();
+    
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.context-menu')) {
+            hideContextMenu();
+        }
+    });
+    
+    document.addEventListener('contextmenu', function(e) {
+        if (e.target.classList.contains('annotation-type-btn')) {
+            e.preventDefault();
+        }
+    });
+});
+
+function handleRightClick(e) {
+    e.preventDefault();
+    
+    if (e.target.classList.contains('annotation-type-btn-add')) {
+        return;
+    }
+    
+    contextMenuTarget = e.target;
+    
+    const contextMenu = document.getElementById('context-menu');
+    contextMenu.style.left = (e.pageX) + 'px';
+    contextMenu.style.top = (e.pageY) + 'px';
+    contextMenu.classList.remove('hidden');
+}
+
+function hideContextMenu() {
+    const contextMenu = document.getElementById('context-menu');
+    contextMenu.classList.add('hidden');
+    contextMenuTarget = null;
+}
+
+function deleteAnnotationTypeFromMenu() {
+    if (!contextMenuTarget || !contextMenuTarget.dataset.type) {
+        alert('Aucun type d\'annotation sélectionné');
+        hideContextMenu();
+        return;
+    }
+
+    const annotationType = contextMenuTarget.dataset.type;
+    const displayName = contextMenuTarget.textContent;
+
+    if (confirm(`Êtes-vous sûr de vouloir supprimer le type d'annotation "${displayName}" ?`)) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch('{% url "expert:delete_annotation_type" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                annotation_type_name: annotationType
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccessNotification('✅ ' + data.message);
+                
+                // Remove the button from the interface
+                contextMenuTarget.remove();
+                
+                // Clear selection if this was the selected type
+                if (selectedAnnotationType === annotationType) {
+                    selectedAnnotationType = null;
+                    selectedColor = null;
+                    document.getElementById('current-mode').textContent = 'Aucun type sélectionné';
+                    document.getElementById('current-mode').style.backgroundColor = '';
+                }
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erreur lors de la suppression du type d\'annotation');
+        });
+    }
+    
+    hideContextMenu();
+}
+</script>
+{% endblock %}

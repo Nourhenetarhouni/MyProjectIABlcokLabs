@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% load rawdocs_extras %}
+{% block title %}Valider Document – RawDocs{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --primary: #0ea5e9;
+    --primary-light: #38bdf8;
+    --primary-dark: #0284c7;
+    --accent: #10b981;
+    --accent-light: #34d399;
+    --warning: #f59e0b;
+    --error: #dc2626;
+    --text: #000000;
+    --text-muted: #6b7280;
+    --text-secondary: #4b5563;
+    --card-bg: rgba(255,255,255,0.09);
+    --card-border: rgba(14,165,233,0.15);
+    --glass-bg: rgba(255,255,255,0.06);
+    --hover-bg: rgba(255,255,255,0.13);
+}
+
+.dashboard-container {
+    max-width: 820px;
+    margin: 2.2rem auto 0;
+    padding: 0 1.5rem 2.5rem 1.5rem;
+}
+.card {
+    background: var(--card-bg);
+    backdrop-filter: blur(14px);
+    border: 1.7px solid var(--card-border);
+    border-radius: 16px;
+    padding: 2.1rem 1.7rem;
+    margin-bottom: 0;
+    box-shadow: 0 2px 8px rgba(14,165,233,0.05);
+    transition: box-shadow 0.3s;
+}
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.7rem;
+}
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.97rem;
+    border: none;
+    gap: 0.5rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.23s cubic-bezier(.4,0,.2,1);
+}
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    box-shadow: 0 4px 12px rgba(14,165,233,0.16);
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--accent), var(--primary-light));
+    transform: translateY(-2px) scale(1.02);
+}
+.btn-outline {
+    background: transparent;
+    color: var(--primary-dark);
+    border: 1.3px solid var(--primary-light);
+}
+.btn-outline:hover {
+    background: var(--hover-bg);
+    color: var(--primary);
+    border-color: var(--primary-light);
+    transform: scale(1.05);
+}
+
+.btn-danger {
+    background: rgba(220,38,38,0.12);
+    color: #dc2626;
+    border: 1.3px solid #dc2626;
+}
+.btn-danger:hover {
+    background: #dc2626;
+    color: white;
+}
+
+.alert-warning {
+    background: rgba(245,158,11,0.10);
+    border: 1.5px solid rgba(245,158,11,0.25);
+    border-radius: 10px;
+    display: flex;
+    align-items: start;
+    gap: 1.2rem;
+    padding: 1.2rem 1rem 1rem 1.1rem;
+    margin-bottom: 2rem;
+}
+.alert-warning i { font-size:1.4rem; margin-top:2px; color: #f59e0b; }
+.alert-warning strong { color: #f59e0b; }
+.alert-warning p { color: #f59e0b; font-size:0.99rem; }
+
+.bg-success {
+    background: rgba(16,185,129,0.10);
+    border: 1.5px solid rgba(16,185,129,0.18);
+    border-radius: 10px;
+    color: #10b981;
+    text-align: center;
+    padding: 2rem 1.5rem;
+}
+
+.bg-success .btn-primary {
+    margin-top: 1.3rem;
+}
+
+.bg-success p {
+    color: #34d399;
+    font-size: 1rem;
+}
+
+@media (max-width: 820px) {
+    .dashboard-container { padding: 0 0.6rem;}
+    .card { padding: 1.2rem;}
+}
+@media (max-width: 520px) {
+    .flex.justify-center.gap-4 { flex-direction: column; }
+    .btn { width:100%; margin-bottom:0.6rem;}
+}
+</style>
+
+<div class="dashboard-container">
+    <div class="card">
+        <!-- Header -->
+        <div style="display:flex; flex-direction:column; border-bottom:1.5px solid var(--card-border); padding-bottom:1.1rem; margin-bottom:2rem;">
+            <h2 class="card-title">
+                <i class="fas fa-check-circle" style="color:var(--accent-light);"></i>
+                Validation du Document
+            </h2>
+            <div class="mt-4">
+                <h3 style="font-size:1.15rem; font-weight:600; color:var(--primary-light);">
+                    {{ document.file.name|basename }}
+                </h3>
+                <div style="display:flex; flex-wrap:wrap; gap:1.3rem; margin-top:0.5rem; font-size:0.98rem;">
+                    <span style="color:var(--text-muted); display:flex; align-items:center; gap:0.4rem;">
+                        <i class="fas fa-user"></i> Propriétaire : {{ document.owner.username }}
+                    </span>
+                    <span style="color:var(--text-muted); display:flex; align-items:center; gap:0.4rem;">
+                        <i class="fas fa-calendar"></i> Importé le : {{ document.created_at|date:"d/m/Y H:i" }}
+                    </span>
+                    <a href="{{ document.url }}" target="_blank"
+                       style="color:var(--primary); display:flex; align-items:center; gap:0.4rem; text-decoration:underline;"
+                       onmouseover="this.style.color='var(--primary-light)';"
+                       onmouseout="this.style.color='var(--primary)';">
+                        <i class="fas fa-link"></i> Source
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div style="background:var(--glass-bg); border-radius:12px; padding:1.5rem 1.3rem; border:1.3px solid var(--card-border); margin-bottom:1rem;">
+                <h4 style="font-size:1.1rem; font-weight:600; color:var(--primary-dark); display:flex; align-items:center; gap:0.8rem; margin-bottom:1.1rem;">
+                    <i class="fas fa-info-circle" style="color:var(--primary-light);"></i>
+                    Que fait la validation ?
+                </h4>
+                <ul style="margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:1.1rem;">
+                    <li style="display:flex; align-items:start; gap:0.9rem;">
+                        <i class="fas fa-file-text" style="color:var(--primary-light); margin-top:2px;"></i>
+                        <div>
+                            <strong style="color:var(--primary-dark);">Extraction des pages</strong>
+                            <p style="color:var(--text-muted);">Le PDF sera divisé en pages individuelles</p>
+                        </div>
+                    </li>
+                    <li style="display:flex; align-items:start; gap:0.9rem;">
+                        <i class="fas fa-brain" style="color:#a78bfa; margin-top:2px;"></i>
+                        <div>
+                            <strong style="color:var(--primary-dark);">Préparation pour l’IA</strong>
+                            <p style="color:var(--text-muted);">Chaque page sera préparée pour l’annotation automatique</p>
+                        </div>
+                    </li>
+                    <li style="display:flex; align-items:start; gap:0.9rem;">
+                        <i class="fas fa-users" style="color:var(--accent-light); margin-top:2px;"></i>
+                        <div>
+                            <strong style="color:var(--primary-dark);">Disponible pour annotation</strong>
+                            <p style="color:var(--text-muted);">Le document apparaîtra dans le dashboard des annotateurs</p>
+                        </div>
+                    </li>
+                    <li style="display:flex; align-items:start; gap:0.9rem;">
+                        <i class="fas fa-tags" style="color:var(--warning); margin-top:2px;"></i>
+                        <div>
+                            <strong style="color:var(--primary-dark);">Annotation automatique</strong>
+                            <p style="color:var(--text-muted);">L’IA pourra identifier automatiquement les entités</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            {% if document.is_validated %}
+                <div class="bg-success">
+                    <i class="fas fa-check-circle" style="font-size:2.3rem; margin-bottom:0.5rem;"></i>
+                    <h3 style="font-size:1.12rem; font-weight:600; margin:1rem 0 0.6rem 0; color: #10b981;">
+                        Document déjà validé
+                    </h3>
+                    <p>Validé le {{ document.validated_at|date:"d/m/Y à H:i" }}</p>
+                    <p><strong>Pages extraites :</strong> {{ document.total_pages }}</p>
+                    <div style="display:flex; justify-content:center; gap:1.1rem; margin-top:1.5rem;">
+                        <a href="{% url 'rawdocs:annotation_dashboard' %}" class="btn btn-primary">
+                            <i class="fas fa-highlighter"></i> Aller à l’annotation
+                        </a>
+                        <a href="{% url 'rawdocs:document_list' %}" class="btn btn-outline">
+                            <i class="fas fa-arrow-left"></i> Retour à la liste
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <form method="post" style="background:var(--glass-bg); border-radius:12px; padding:1.3rem 1.2rem; border:1.3px solid var(--card-border);">
+                    {% csrf_token %}
+                    <div class="alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            <strong>Attention :</strong>
+                            <p>
+                                Cette action va extraire toutes les pages du PDF et le rendre disponible pour l’annotation par l’IA.<br>
+                                Cette opération peut prendre quelques secondes selon la taille du document.
+                            </p>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:center; gap:1.2rem;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check"></i>
+                            Valider le Document
+                        </button>
+                        <a href="{% url 'rawdocs:document_list' %}" class="btn btn-outline btn-danger">
+                            <i class="fas fa-times"></i>
+                            Annuler
+                        </a>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,388 @@
+{% extends 'submissions/base.html' %}
+
+{% block title %}Template - {{ section.section_number }} {{ section.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'submissions:list' %}">Soumissions</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'submissions:detail' submission.pk %}">{{ submission.name }}</a>
+                </li>
+                <li class="breadcrumb-item">{{ module.get_module_type_display }}</li>
+                <li class="breadcrumb-item active">Template {{ section.section_number }}</li>
+            </ol>
+        </nav>
+        <h1 class="h2">
+            <i class="fas fa-file-alt text-primary"></i> EMA Template - Formatted table template
+        </h1>
+    </div>
+    <div>
+        <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">
+            Fermer
+        </button>
+        <a href="{% url 'submissions:download_template_pdf' submission.pk section.pk %}" 
+           class="btn btn-primary">
+            <i class="fas fa-download"></i> Télécharger Template
+        </a>
+    </div>
+</div>
+
+<!-- Template Form -->
+<div class="card">
+    <div class="card-header text-center">
+        <div class="mb-2">
+            <i class="fas fa-briefcase-medical fa-2x text-primary"></i>
+        </div>
+        <h5 class="mb-1">EUROPEAN MEDICINES AGENCY</h5>
+        <small class="text-muted">SCIENCE MEDICINES HEALTH</small>
+        
+        <div class="mt-3 text-end">
+            <small>{{ template.date_created|date:"d F Y" }}</small><br>
+            <small class="text-muted">{{ template.division }}, {{ template.version }}</small>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <div class="text-center mb-4">
+            <h5 class="text-primary">Formatted table template</h5>
+            <p class="text-muted">To be inserted in each procedural submission cover letter.</p>
+        </div>
+        
+        <form method="post" id="templateForm">
+            {% csrf_token %}
+            
+            <!-- Champ 1: Applicant/MAH Name -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        1*
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">Applicant/MAH Name</label>
+                </div>
+                <div class="col-md-7">
+                    {{ form.applicant_name }}
+                </div>
+            </div>
+            
+            <!-- Champ 2: Customer Account Number -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        2*
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">Customer Account Number</label>
+                </div>
+                <div class="col-md-7">
+                    {{ form.customer_account_number }}
+                </div>
+            </div>
+            
+            <!-- Champ 3: Customer Reference -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        3*
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">Customer Reference / Purchase Order Number</label>
+                </div>
+                <div class="col-md-7">
+                    {{ form.customer_reference }}
+                </div>
+            </div>
+            
+            <!-- Champ 4: INN / Active substance/ATC Code -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        4
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">INN / Active substance/ATC Code</label>
+                </div>
+                <div class="col-md-7">
+                    {{ form.inn_code }}
+                </div>
+            </div>
+            
+            <!-- Champ 5: Product Name -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        5
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">Product Name of centrally authorised medicinal product(s)</label>
+                </div>
+                <div class="col-md-7">
+                    {{ form.product_name }}
+                </div>
+            </div>
+            
+            <!-- Champ 5.1: Nationally Authorised Product(s) -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        5.1*
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">Nationally Authorised Product(s)</label>
+                </div>
+                <div class="col-md-7">
+                    <div class="form-check">
+                        {{ form.nationally_authorised }}
+                        <label class="form-check-label">Check if applicable</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Champ 6: Product Number or Procedure Number -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        6*
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">
+                        Product Number or Procedure Number or PSUSA (PSUR Single Assessment) Non-EU single assessment PSUR Period Covered (For both PSUSA and Non-EU procedures) Is this:
+                    </label>
+                </div>
+                <div class="col-md-7">
+                    {{ form.product_procedure_number }}
+                    <div class="mt-2">
+                        <div class="form-check">
+                            {{ form.national_marketing_auth_no }}
+                            <label class="form-check-label">National Marketing Authorisation No</label>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    {{ form.new_procedure }}
+                                    <label class="form-check-label">A submission of a new procedure</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    {{ form.response_supplementary }}
+                                    <label class="form-check-label">A response/supplementary information to an on-going procedure</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Champ 7: Unit Type -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        7*
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">Unit Type</label>
+                </div>
+                <div class="col-md-7">
+                    {{ form.unit_type }}
+                </div>
+            </div>
+            
+            <!-- Champ 7.1: Mode -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        7.1*
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">Mode</label>
+                </div>
+                <div class="col-md-7">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.mode_single }}
+                                <label class="form-check-label">Single</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.mode_grouping }}
+                                <label class="form-check-label">Grouping</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Champ 7.2: Procedure Type -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        7.2*
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">Procedure Type (Please select)</label>
+                </div>
+                <div class="col-md-7">
+                    {{ form.procedure_type }}
+                </div>
+            </div>
+            
+            <!-- Champ 7.3: Description of submission -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        7.3*
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">Description of submission</label>
+                </div>
+                <div class="col-md-7">
+                    {{ form.description_submission }}
+                </div>
+            </div>
+            
+            <!-- Champ 8: Centrally authorised medicinal products -->
+            <div class="row mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        8*
+                    </div>
+                </div>
+                <div class="col-md-11">
+                    <label class="form-label fw-bold">
+                        Please provide the name(s) of any centrally authorised medicinal product(s) for which the same change(s) are being applied for outside of this procedure:
+                    </label>
+                    <div class="mt-2">
+                        <label class="form-label">Product name and number:</label>
+                        {{ form.related_products }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Champ 9: RMP included -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        9*
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">RMP included in this submission:</label>
+                </div>
+                <div class="col-md-7">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.rmp_included }}
+                                <label class="form-check-label">Yes</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div>
+                                <label class="form-label small">RMP version N.</label>
+                                {{ form.rmp_version }}
+                                <div class="mt-1">
+                                    <label class="form-label small">Related submission numbers:</label>
+                                    {{ form.related_submission_numbers }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Champ 10: eCTD sequence -->
+            <div class="row align-items-center mb-3 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        10*
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-0 fw-bold">eCTD sequence</label>
+                </div>
+                <div class="col-md-7">
+                    {{ form.ectd_sequence }}
+                </div>
+            </div>
+            
+            <!-- Champ 11: Contact Persons' details -->
+            <div class="row mb-4 p-2 border-start border-4 border-primary">
+                <div class="col-md-1">
+                    <div class="bg-primary text-white text-center py-2 px-3 fw-bold">
+                        11*
+                    </div>
+                </div>
+                <div class="col-md-11">
+                    <label class="form-label fw-bold">Contact Persons' details (include email address)</label>
+                    
+                    <div class="mt-2">
+                        <label class="form-label">A) Regarding the content of the submission:</label>
+                        {{ form.contact_content }}
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">B) Regarding eCTD technical questions:</label>
+                        {{ form.contact_technical }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Boutons d'action -->
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary">
+                    Fermer
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-download"></i> Télécharger Template
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.border-start.border-4.border-primary {
+    background: linear-gradient(90deg, #007bff 4px, #f8f9fa 4px);
+}
+
+.form-control, .form-select {
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+textarea.form-control {
+    resize: vertical;
+}
+</style>
+{% endblock %}

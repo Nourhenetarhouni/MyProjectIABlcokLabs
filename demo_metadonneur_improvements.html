@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interface Métadonneur - Améliorations</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f172a;
+            --primary-light: #2563eb;
+            --accent: #3b82f6;
+            --accent-light: #60a5fa;
+            --text: #f8fafc;
+            --text-secondary: #e2e8f0;
+            --card-bg: rgba(15, 23, 42, 0.80);
+            --card-border: rgba(59, 130, 246, 0.20);
+            --shadow: 0 8px 32px rgba(31, 72, 164, 0.12);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            margin: 0;
+            padding: 2rem;
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        /* Upload Form */
+        .upload-form {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow);
+            border-radius: 20px;
+            padding: 2.2rem 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .upload-title {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Text Card - AVANT */
+        .text-card-old {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: 18px;
+            padding: 1.5rem 1.3rem;
+            margin-bottom: 2.5rem;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(8px);
+        }
+
+        .text-content-old {
+            max-height: 38vh;
+            overflow: auto;
+            background: rgba(31,41,55,0.60);
+            padding: 1.2rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            color: var(--text);
+            line-height: 1.6;
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        }
+
+        /* Text Card - APRÈS (Amélioré) */
+        .text-card-new {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: 18px;
+            padding: 1.5rem 1.3rem;
+            margin-bottom: 2.5rem;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(8px);
+        }
+
+        .text-content-new {
+            max-height: 38vh;
+            overflow: auto;
+            background: rgba(31,41,55,0.60);
+            padding: 1.8rem 2rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+            color: var(--text);
+            line-height: 1.8;
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            hyphens: auto;
+            word-spacing: 0.05em;
+        }
+
+        .text-content-new::before {
+            content: "";
+            display: block;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, 
+                transparent, 
+                rgba(59, 130, 246, 0.3), 
+                transparent
+            );
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.18rem;
+            font-weight: 600;
+            color: var(--accent-light);
+            margin-bottom: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .section-label {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .before-label {
+            background: rgba(220, 38, 38, 0.1);
+            color: #fca5a5;
+            border: 1px solid rgba(220, 38, 38, 0.3);
+        }
+
+        .after-label {
+            background: rgba(34, 197, 94, 0.1);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--text);
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+        }
+
+        .sample-text {
+            font-size: 0.95rem;
+        }
+
+        .improvements-summary {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .improvements-summary h3 {
+            color: var(--accent-light);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .improvement-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: rgba(59, 130, 246, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .improvement-item::before {
+            content: "✨";
+            margin-right: 1rem;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Interface Métadonneur Améliorée</h1>
+            <p>Affichage du Texte Extrait - Comparaison Avant/Après</p>
+        </div>
+
+        <div class="upload-form">
+            <h2 class="upload-title">
+                📄 Extraction de Métadonnées et Texte
+            </h2>
+            
+            <div class="comparison-grid">
+                <div>
+                    <div class="section-label before-label">❌ AVANT - Texte Condensé</div>
+                    <div class="text-card-old">
+                        <h3 class="card-title">📄 Texte complet extrait</h3>
+                        <div class="text-content-old">
+                            <pre class="sample-text">Guide de Validation des Procédures Pharmaceutiques
+
+1. INTRODUCTION
+
+Ce document présente les procédures de validation pour les processus pharmaceutiques selon les standards européens et internationaux. Les exigences réglementaires évoluent constamment et nécessitent une attention particulière.
+
+2. CRITÈRES DE VALIDATION
+
+Les critères suivants doivent être respectés :
+- Conformité aux Bonnes Pratiques de Fabrication (BPF)
+- Traçabilité complète de tous les processus
+- Documentation exhaustive des procédures
+- Contrôle qualité à chaque étape
+
+3. PROCÉDURES OPÉRATIONNELLES
+
+Chaque procédure doit inclure :
+• Description détaillée des étapes
+• Responsabilités assignées
+• Critères d'acceptation définis
+• Actions correctives en cas de non-conformité
+
+4. DOCUMENTATION REQUISE
+
+La documentation comprend :
+- Protocoles de validation
+- Rapports d'analyse
+- Certificats de conformité
+- Enregistrements de formation</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="section-label after-label">✅ APRÈS - Texte Structuré</div>
+                    <div class="text-card-new">
+                        <h3 class="card-title">📄 Texte complet extrait</h3>
+                        <div class="text-content-new">
+                            <pre class="sample-text">Guide de Validation des Procédures Pharmaceutiques
+
+1. INTRODUCTION
+
+Ce document présente les procédures de validation pour les processus pharmaceutiques selon les standards européens et internationaux. Les exigences réglementaires évoluent constamment et nécessitent une attention particulière.
+
+2. CRITÈRES DE VALIDATION
+
+Les critères suivants doivent être respectés :
+- Conformité aux Bonnes Pratiques de Fabrication (BPF)
+- Traçabilité complète de tous les processus
+- Documentation exhaustive des procédures
+- Contrôle qualité à chaque étape
+
+3. PROCÉDURES OPÉRATIONNELLES
+
+Chaque procédure doit inclure :
+• Description détaillée des étapes
+• Responsabilités assignées
+• Critères d'acceptation définis
+• Actions correctives en cas de non-conformité
+
+4. DOCUMENTATION REQUISE
+
+La documentation comprend :
+- Protocoles de validation
+- Rapports d'analyse
+- Certificats de conformité
+- Enregistrements de formation</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="improvements-summary">
+            <h3>🎯 Améliorations Spécifiques à l'Interface Métadonneur</h3>
+            
+            <div class="improvement-item">
+                <strong>Padding Généreux :</strong> Augmentation du padding de 1.2rem à 1.8rem horizontalement et 2rem verticalement pour plus de confort de lecture
+            </div>
+            
+            <div class="improvement-item">
+                <strong>Bordure Définie :</strong> Ajout d'une bordure subtile avec couleur thématique pour délimiter clairement l'espace de texte
+            </div>
+            
+            <div class="improvement-item">
+                <strong>Ombre Intérieure :</strong> Effet d'ombre intérieure pour créer une profondeur et simuler l'aspect papier d'un document
+            </div>
+            
+            <div class="improvement-item">
+                <strong>Ligne de Séparation :</strong> Ajout d'une ligne gradient en haut pour séparer visuellement le contenu et créer une hiérarchie
+            </div>
+            
+            <div class="improvement-item">
+                <strong>Typographie Optimisée :</strong> Amélioration du rendu des polices avec antialiasing et espacement des mots optimisé
+            </div>
+            
+            <div class="improvement-item">
+                <strong>Taille de Police :</strong> Augmentation de 1rem à 1.05rem et line-height de 1.6 à 1.8 pour une meilleure lisibilité
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<style>
+#chatbot-toggle-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 10000;
+    background: #0078d7;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    font-size: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+#chatbot-toggle-btn:hover {
+    background: #005fa3;
+}
+#chatbot-widget {
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    width: 350px;
+    z-index: 9999;
+    display: none;
+}
+#chatbot-box {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+}
+#chatbot-header {
+    background: linear-gradient(90deg,#0078d7,#00c6fb);
+    color: #fff;
+    padding: 12px 18px;
+    font-weight: 600;
+    font-size: 18px;
+    border-bottom: 1px solid #e0e0e0;
+}
+#chatbot-messages {
+    height: 220px;
+    overflow-y: auto;
+    padding: 12px;
+    background: #f7f9fa;
+    font-size: 15px;
+}
+#chatbot-form {
+    display: flex;
+    border-top: 1px solid #e0e0e0;
+    background: #fff;
+    padding: 10px;
+}
+#chatbot-input {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    margin-right: 8px;
+    font-size: 15px;
+}
+#chatbot-send-btn {
+    background: #0078d7;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+#chatbot-send-btn:hover {
+    background: #005fa3;
+}
+.chatbot-msg-user {
+    text-align: right;
+    margin-bottom: 8px;
+}
+.chatbot-msg-bot {
+    text-align: left;
+    margin-bottom: 8px;
+}
+/* taille par défaut */
+#chatbot-widget { width: 380px; max-height: 75vh; }
+#chatbot-messages { height: 300px; }
+
+/* mode agrandi */
+#chatbot-widget.expanded { width: 640px; max-height: 85vh; }
+#chatbot-widget.expanded #chatbot-messages { height: 520px; }
+
+/* (garde aussi les styles de tableau un peu plus grands) */
+.chatbot-table { font-size: 15px; }
+.chatbot-table th, .chatbot-table td { padding: 8px 12px; }
+
+</style>
+<button id="chatbot-toggle-btn" title="Chatbot">
+    <span class="material-icons">chat</span>
+</button>
+<div id="chatbot-widget">
+    <div id="chatbot-box">
+        <div id="chatbot-header">
+        Chatbot
+        <button id="chatbot-resize-btn" title="Agrandir" style="float:right;background:transparent;border:none;color:#fff;font-size:16px;cursor:pointer;">⤢</button>
+        </div>
+
+        <div id="chatbot-messages"></div>
+        <form id="chatbot-form" autocomplete="off">
+            <input type="text" id="chatbot-input" placeholder="Votre message...">
+            <button type="submit" id="chatbot-send-btn">Envoyer</button>
+        </form>
+    </div>
+</div>
+<script>
+ 
+const toggleBtn = document.getElementById('chatbot-toggle-btn');
+const widget = document.getElementById('chatbot-widget');
+const form = document.getElementById('chatbot-form');
+const input = document.getElementById('chatbot-input');
+const messages = document.getElementById('chatbot-messages');
+ 
+// Message de bienvenue par défaut
+let welcomeSent = false;
+function showWelcome() {
+    if (!welcomeSent) {
+        messages.innerHTML += `<div class='chatbot-msg-bot'><b>Bot:</b> Bonjour ! Comment puis-je vous aider aujourd'hui ?</div>`;
+        welcomeSent = true;
+        messages.scrollTop = messages.scrollHeight;
+    }
+}
+ 
+// Toggle chatbot visibility
+if(toggleBtn && widget) {
+    toggleBtn.onclick = function() {
+        if(widget.style.display === 'none') {
+            widget.style.display = 'block';
+            showWelcome();
+        } else {
+            widget.style.display = 'none';
+        }
+    }
+}
+// Send message
+ 
+// Fonction simple de conversion Markdown (tableaux uniquement)
+function markdownTableToHtml(md) {
+    // Détecte un tableau markdown
+    if (!md.includes('|')) return null;
+    const lines = md.trim().split('\n').filter(l => l.includes('|'));
+    if (lines.length < 2) return null;
+    let html = '<table class="chatbot-table">';
+    lines.forEach((line, i) => {
+        const cells = line.split('|').slice(1, -1).map(c => c.trim());
+        if (i === 0) {
+            html += '<thead><tr>' + cells.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+        } else if (i === 1) {
+            // séparateur markdown, ignorer
+        } else {
+            html += '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+        }
+    });
+    html += '</tbody></table>';
+    return html;
+}
+ 
+form.onsubmit = function(e) {
+    e.preventDefault();
+    const msg = input.value.trim();
+    if(msg) {
+        messages.innerHTML += `<div class='chatbot-msg-user'><b>Vous:</b> ${msg}</div>`;
+        input.value = '';
+        document.getElementById('chatbot-send-btn').disabled = true;
+        messages.innerHTML += `<div id='chatbot-loading' class='chatbot-msg-bot'><i>Bot est en train de répondre...</i></div>`;
+        messages.scrollTop = messages.scrollHeight;
+        fetch('/chatbot/api/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({message: msg})
+        })
+        .then(response => response.json())
+        .then(data => {
+            const loadingMsg = document.getElementById('chatbot-loading');
+            if(loadingMsg) loadingMsg.remove();
+            let botMsg = data.response;
+            let htmlTable = markdownTableToHtml(botMsg);
+            if(htmlTable) {
+                messages.innerHTML += `<div class='chatbot-msg-bot'><b>Bot:</b><br>${htmlTable}</div>`;
+            } else {
+                messages.innerHTML += `<div class='chatbot-msg-bot'><b>Bot:</b> ${botMsg}</div>`;
+            }
+            messages.scrollTop = messages.scrollHeight;
+            document.getElementById('chatbot-send-btn').disabled = false;
+        })
+        .catch(() => {
+            const loadingMsg = document.getElementById('chatbot-loading');
+            if(loadingMsg) loadingMsg.remove();
+            messages.innerHTML += `<div class='chatbot-msg-bot'><b>Bot:</b> Erreur serveur.</div>`;
+            messages.scrollTop = messages.scrollHeight;
+            document.getElementById('chatbot-send-btn').disabled = false;
+        });
+    }
+}
+ 
+// Style pour le tableau chatbot
+const style = document.createElement('style');
+style.innerHTML = `.chatbot-table {border-collapse:collapse;width:100%;margin:8px 0;font-size:14px;} .chatbot-table th, .chatbot-table td {border:1px solid #ddd;padding:6px 10px;} .chatbot-table th {background:#f1f5f9;}`;
+document.head.appendChild(style);
+
+const resizeBtn = document.getElementById('chatbot-resize-btn');
+
+if (resizeBtn) {
+  resizeBtn.onclick = function () {
+    widget.classList.toggle('expanded');
+    // change l’icône et l’info-bulle
+    const expanded = widget.classList.contains('expanded');
+    resizeBtn.textContent = expanded ? '⤡' : '⤢';
+    resizeBtn.title = expanded ? 'Réduire' : 'Agrandir';
+    messages.scrollTop = messages.scrollHeight;
+  };
+}
+
+</script>

@@ -1,0 +1,458 @@
+{% extends 'client/base.html' %}
+{% load static %}
+
+{% block title %}Reporting - RegX Platform{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports.css' %}">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+    /* Override base styles for full-width reports */
+    .main-content {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+        min-height: 100vh;
+        background-color: #f8f9fa;
+        padding: 0;
+    }
+    
+    .reports-container {
+        width: 100%;
+        min-height: 100vh;
+        background-color: #f8f9fa;
+    }
+    
+    /* FORCE THE GRID TO WORK */
+    .kpi-cards-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 1.5rem !important;
+    }
+    
+    @media (max-width: 1200px) {
+        .kpi-cards-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .kpi-cards-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+
+    /* Reports History Styles */
+    .reports-history {
+        margin: 0 2rem 2rem 2rem;
+    }
+
+    .reports-history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .history-item {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        transition: all 0.15s ease;
+    }
+
+    .history-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    .history-content h5 {
+        margin: 0 0 0.25rem 0;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .history-content small {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .status-badge.success {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-badge.pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow: hidden;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6b7280;
+        padding: 0;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.25rem;
+    }
+
+    .modal-close:hover {
+        background: #f9fafb;
+        color: #374151;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+    }
+
+    .preview-content h4 {
+        margin: 0 0 1rem 0;
+        color: #1f2937;
+    }
+
+    .preview-info ul {
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0;
+    }
+
+    .preview-info li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .preview-info li:last-child {
+        border-bottom: none;
+    }
+
+    .preview-actions {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- CSRF Token for AJAX requests -->
+{% csrf_token %}
+
+<div class="reports-container">
+    <!-- Header Section -->
+    <header class="reports-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1 class="reports-title">Reporting</h1>
+                <p class="reports-subtitle">Génération de rapports et tableaux de bord</p>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-secondary">
+                    <i class="material-icons">save</i>
+                    Sauvegarder Vue
+                </button>
+                <button class="btn btn-primary">
+                    <i class="material-icons">add</i>
+                    Nouveau Report
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- KPI Cards Section -->
+    <div class="kpi-section">
+        <div class="kpi-cards-grid">
+            <!-- Documents traités -->
+            <div class="kpi-card blue">
+                <div class="kpi-icon">
+                    <i class="material-icons">description</i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-value">{{ kpis.rapports_mois|default:0 }}</div>
+                    <div class="kpi-label">Documents traités</div>
+                </div>
+            </div>
+
+            <!-- Annotations créées -->
+            <div class="kpi-card green">
+                <div class="kpi-icon">
+                    <i class="material-icons">visibility</i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-value">{{ kpis.total_annotations|default:0 }}</div>
+                    <div class="kpi-label">Annotations créées</div>
+                </div>
+            </div>
+
+            <!-- Exports PDF -->
+            <div class="kpi-card orange">
+                <div class="kpi-icon">
+                    <i class="material-icons">file_download</i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-value">{{ kpis.exports_pdf|default:0 }}</div>
+                    <div class="kpi-label">Exports PDF</div>
+                </div>
+            </div>
+
+            <!-- Produits créés -->
+            <div class="kpi-card purple">
+                <div class="kpi-icon">
+                    <i class="material-icons">share</i>
+                </div>
+                <div class="kpi-content">
+                    <div class="kpi-value">{{ kpis.partages|default:0 }}</div>
+                    <div class="kpi-label">Produits créés</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Generator Section -->
+    <div class="generator-section">
+        <div class="generator-header">
+            <h2 class="generator-title">
+                <i class="material-icons">build</i>
+                Générateur de Reports
+            </h2>
+        </div>
+        
+        <div class="generator-controls">
+            <div class="control-group">
+                <label>Template</label>
+                <select class="control-select" name="template">
+                    <option value="">Choisir template</option>
+                    {% for template in report_templates %}
+                    <option value="{{ template.name }}">{{ template.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Période</label>
+                <select class="control-select" name="period">
+                    {% for period_key, period_label in available_filters.periods %}
+                    <option value="{{ period_key }}" {% if period_key == filters.period %}selected{% endif %}>{{ period_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Autorité</label>
+                <select class="control-select" name="authority">
+                    <option value="">Toutes autorités</option>
+                    {% for authority in available_filters.authorities %}
+                    <option value="{{ authority }}" {% if authority == filters.authority %}selected{% endif %}>{{ authority }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Actions</label>
+                <button class="btn btn-primary control-button">
+                    <i class="material-icons">play_arrow</i>
+                    Générer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Section -->
+    <div class="templates-section">
+        <h2 class="section-title">Templates de Reports</h2>
+        
+        <div class="templates-grid">
+            {% for template in report_templates %}
+            <div class="template-card">
+                <div class="template-header">
+                    <h3>{{ template.name }}</h3>
+                    <p>{{ template.description }}</p>
+                </div>
+                <div class="template-meta">
+                    <span class="template-type">{{ template.type }}</span>
+                    <span class="template-updated">Dernière génération: {{ template.last_generated }}</span>
+                </div>
+                <div class="template-actions">
+                    <button class="btn btn-text" data-template="{{ template.name }}">
+                        <i class="material-icons">visibility</i>
+                        Aperçu
+                    </button>
+                    <button class="btn btn-secondary" data-template="{{ template.name }}">
+                        <i class="material-icons">get_app</i>
+                        Générer
+                    </button>
+                    <button class="btn btn-text" data-template="{{ template.name }}">
+                        <i class="material-icons">file_download</i>
+                        Export
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Reports History Section -->
+    <div class="reports-history">
+        <h2 class="section-title">Historique des Rapports</h2>
+        
+        <div class="reports-history-list">
+            <!-- History items will be added here dynamically -->
+            <div class="history-item">
+                <div class="history-content">
+                    <h5>Exemple - Rapport Mensuel de Conformité</h5>
+                    <small>Généré le {{ "now"|date:"d/m/Y H:i" }}</small>
+                </div>
+                <div class="history-actions">
+                    <span class="status-badge success">Terminé</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Saved Views Section -->
+    <div class="saved-views-section">
+        <h2 class="section-title">Vues Sauvegardées</h2>
+        
+        <div class="saved-views-grid">
+            {% for view in saved_views %}
+            <div class="saved-view-item">
+                <div class="saved-view-content">
+                    <h4>{{ view.name }}</h4>
+                    <p>{{ view.description }}</p>
+                </div>
+                <div class="saved-view-actions">
+                    <button class="btn btn-text" data-view="{{ view.name }}">
+                        <i class="material-icons">visibility</i>
+                    </button>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="activity-section">
+        <h2 class="section-title">Activité Récente</h2>
+        
+        <div class="activity-grid">
+            <div class="activity-card">
+                <h3>Documents Récents</h3>
+                <div class="activity-list">
+                    {% for doc in recent_activity.recent_documents|slice:":5" %}
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="material-icons">description</i>
+                        </div>
+                        <div class="activity-content">
+                            <p><strong>Document #{{ doc.id }}</strong></p>
+                            <small>{{ doc.doc_type|default:"Document" }} - {{ doc.created_at|date:"d/m/Y H:i" }}</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="no-data">Aucun document récent</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="activity-card">
+                <h3>Produits Créés</h3>
+                <div class="activity-list">
+                    {% for product in recent_activity.recent_products %}
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="material-icons">inventory</i>
+                        </div>
+                        <div class="activity-content">
+                            <p><strong>{{ product.name }}</strong></p>
+                            <small>{{ product.active_ingredient|default:"N/A" }} - {{ product.created_at|date:"d/m/Y" }}</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="no-data">Aucun produit récent</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    {% if kpis.avg_processing_days %}
+    <div class="metrics-section">
+        <h2 class="section-title">Métriques de Performance</h2>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value">{{ kpis.avg_processing_days }}j</div>
+                <div class="metric-label">Temps moyen de traitement</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ kpis.active_users }}</div>
+                <div class="metric-label">Utilisateurs actifs</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/reports.js' %}"></script>
+{% endblock %}

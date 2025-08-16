@@ -1,0 +1,179 @@
+{% extends 'submissions/base.html' %}
+
+{% block title %}{{ section.section_number }} {{ section.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'submissions:list' %}">Soumissions</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'submissions:detail' submission.pk %}">{{ submission.name }}</a>
+                </li>
+                <li class="breadcrumb-item">{{ module.get_module_type_display }}</li>
+                <li class="breadcrumb-item active">{{ section.section_number }}</li>
+            </ol>
+        </nav>
+        <h1 class="h2">
+            <i class="fas fa-eye text-primary"></i> {{ section.section_number }} {{ section.title }}
+        </h1>
+    </div>
+    <div>
+        <a href="{% url 'submissions:section_template' submission.pk module.pk section.pk %}" 
+           class="btn btn-primary">
+            <i class="fas fa-edit"></i> Modifier Template
+        </a>
+    </div>
+</div>
+
+<!-- Informations de la section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-info-circle"></i> Informations de la section
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Module:</strong><br>
+                <span class="text-muted">{{ module.get_module_type_display }}</span>
+            </div>
+            <div class="col-md-3">
+                <strong>Section:</strong><br>
+                <span class="text-muted">{{ section.section_number }}</span>
+            </div>
+            <div class="col-md-3">
+                <strong>Statut:</strong><br>
+                {% if section.is_completed %}
+                    <span class="badge bg-success">Complété</span>
+                {% else %}
+                    <span class="badge bg-warning">En cours</span>
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                <strong>Soumission:</strong><br>
+                <span class="text-muted">{{ submission.name }}</span>
+            </div>
+        </div>
+        
+        {% if section.description %}
+        <div class="mt-3">
+            <strong>Description:</strong>
+            <p class="text-muted mb-0">{{ section.description }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Contenu de la section -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-file-alt"></i> Contenu réel de la section
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if section.template_content %}
+            <div class="content-viewer border p-4" style="background: #f8f9fa; border-radius: 8px;">
+                {{ section.template_content|linebreaks }}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-file-plus fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucun contenu disponible</h5>
+                <p class="text-muted mb-4">Cette section n'a pas encore de contenu. Utilisez le template pour ajouter du contenu.</p>
+                <a href="{% url 'submissions:section_template' submission.pk module.pk section.pk %}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Créer le contenu
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Template formaté (si disponible) -->
+{% if section.formatted_template %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-table"></i> Template formaté EMA
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="template-preview border p-4" style="background: white;">
+            <!-- En-tête EMA -->
+            <div class="text-center mb-4">
+                <h6 class="text-primary">EUROPEAN MEDICINES AGENCY</h6>
+                <small class="text-muted">SCIENCE MEDICINES HEALTH</small>
+            </div>
+            
+            <div class="text-end mb-3">
+                <small>{{ section.formatted_template.date_created|date:"d F Y" }}</small><br>
+                <small class="text-muted">{{ section.formatted_template.division }}, {{ section.formatted_template.version }}</small>
+            </div>
+            
+            <h6 class="text-primary">{{ section.formatted_template.template_name }}</h6>
+            <p class="small text-muted">To be inserted in each procedural submission cover letter.</p>
+            
+            <!-- Table des données -->
+            <table class="table table-sm table-bordered">
+                <tbody>
+                    {% if section.formatted_template.applicant_name %}
+                    <tr>
+                        <td width="80" class="bg-primary text-white text-center"><strong>1*</strong></td>
+                        <td width="300"><strong>Applicant/MAH Name</strong></td>
+                        <td>{{ section.formatted_template.applicant_name }}</td>
+                    </tr>
+                    {% endif %}
+                    
+                    {% if section.formatted_template.customer_account_number %}
+                    <tr>
+                        <td class="bg-primary text-white text-center"><strong>2*</strong></td>
+                        <td><strong>Customer Account Number</strong></td>
+                        <td>{{ section.formatted_template.customer_account_number }}</td>
+                    </tr>
+                    {% endif %}
+                    
+                    {% if section.formatted_template.product_name %}
+                    <tr>
+                        <td class="bg-primary text-white text-center"><strong>5</strong></td>
+                        <td><strong>Product Name of centrally authorised medicinal product(s)</strong></td>
+                        <td>{{ section.formatted_template.product_name }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            
+            <div class="text-end mt-3">
+                <a href="{% url 'submissions:download_template_pdf' submission.pk section.pk %}" 
+                   class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-download"></i> Télécharger Template
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.content-viewer {
+    min-height: 300px;
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+}
+
+.template-preview {
+    font-size: 0.9rem;
+}
+
+.template-preview table {
+    font-size: 0.85rem;
+}
+</style>
+{% endblock %}
